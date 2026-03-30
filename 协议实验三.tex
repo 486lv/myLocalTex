@@ -1,0 +1,412 @@
+\documentclass[12pt]{ctexart}
+
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{indentfirst}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{mindmap,trees,shadows}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+
+\setlength{\parindent}{0em}
+\setstretch{1.5}
+
+% 标题格式
+\titleformat{\section}{\bfseries\zihao{4}}{}{0em}{}
+\titleformat{\subsection}{\bfseries\zihao{-4}}{}{0em}{}
+
+% 自定义空行
+\newcommand{\blankline}{\vspace{1.5em}}
+
+\begin{document}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.70\textwidth]{img/0.png}
+\end{figure}
+% 首页不显示页码
+\thispagestyle{empty}
+
+{\heiti\zihao{4} 一、实验名称：}
+\textbf{SSL和PKI实验}
+
+{\heiti\zihao{4} 二、实验学时：4}
+
+
+{\heiti\zihao{4} 三、实验内容和目的：}
+
+\textbf{实验目的：}
+\begin{enumerate}
+    \renewcommand{\labelenumi}{（\theenumi）}
+    \item 掌握SSL协议和PKI的运行机制；
+    \item 掌握证书申请的过程（两种）；
+    \item 熟悉X.509 v3证书格式（三种）。
+\end{enumerate}
+
+\textbf{实验内容：}
+
+配置基于Web的SSL连接：
+\begin{enumerate}
+    \renewcommand{\labelenumi}{（\theenumi）}
+    \item 证书申请、颁发和安装；
+    \item 在服务器上配置SSL；
+    \item 使用Wireshark抓包，分析SSL记录和SSL握手流程；
+    \item 分析X.509 v3证书。
+\end{enumerate}
+
+
+{\heiti\zihao{4} 四、实验原理：}
+
+SSL及其后续发展协议TLS是一种用于保障网络通信安全的协议，广泛应用于HTTPS中。SSL位于应用层与传输层之间，在不改变上层应用协议的基础上，为网络通信提供安全保护，其主要作用包括身份认证、数据保密性和数据完整性。
+
+SSL协议主要由\textbf{记录协议}和\textbf{握手协议}两部分组成。记录协议负责对应用层传输的数据进行分段、加密和完整性校验，从而保证数据在传输过程中不被窃听和篡改；握手协议负责在通信开始前协商安全参数，包括协议版本、密码套件、密钥交换方式以及身份认证方式等。
+
+SSL握手过程中，客户端首先向服务器发送 \texttt{ClientHello} 报文，声明自己支持的协议版本和加密算法；服务器返回 \texttt{ServerHello} 报文，并发送自己的数字证书。客户端验证服务器证书合法后，生成预主密钥，并利用服务器公钥加密后发送给服务器。随后双方根据协商结果生成会话密钥，并通过 \texttt{ChangeCipherSpec} 和 \texttt{Finished} 报文确认后续通信采用加密方式进行。握手完成后，应用数据通过SSL记录层进行安全传输。
+
+SSL中的身份认证依赖于PKI和数字证书机制。数字证书通常采用X.509 v3格式，其中包含证书持有者信息、公钥、签发者、有效期及数字签名等内容。客户端在验证服务器证书时，需要检查证书是否在有效期内、证书主体名称是否正确、签发机构是否可信以及数字签名是否有效。只有验证通过后，客户端才会信任服务器身份并继续建立安全连接。
+
+本实验中，需要完成根证书、Web服务器证书和客户端证书的申请、颁发与安装，并在IIS中配置SSL服务，使客户端能够通过HTTPS与服务器建立安全连接。结合Wireshark抓包分析SSL记录层和握手过程，可以进一步验证SSL与PKI在安全通信中的工作机制。
+
+
+\begin{table}[H]
+\centering
+\caption{SSL与PKI实验原理总结}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{部分} & \textbf{作用} & \textbf{实验中的体现} \\ \hline
+SSL记录协议 & 对应用数据加密并校验完整性 & 抓包后可看到加密的SSL记录 \\ \hline
+SSL握手协议 & 协商算法、交换密钥、建立安全连接 & 分析ClientHello、ServerHello等报文 \\ \hline
+PKI体系 & 建立身份信任关系 & 通过CA签发并验证证书 \\ \hline
+服务器证书 & 证明Web服务器身份 & IIS中安装并绑定HTTPS \\ \hline
+客户端证书 & 证明客户端身份 & 浏览器申请和安装客户端证书 \\ \hline
+根证书 & 作为信任链的起点 & 导入后用于验证签名 \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=Stealth, font=\small]
+\node at (0,0) {\textbf{客户端}};
+\node at (7,0) {\textbf{服务器}};
+
+\draw[thick] (0,-0.5) -- (0,-8.5);
+\draw[thick] (7,-0.5) -- (7,-8.5);
+
+\draw[->] (0,-1) -- (7,-1);
+\node at (3.5,-0.7) {ClientHello};
+
+\draw[<-] (0,-2) -- (7,-2);
+\node at (3.5,-1.7) {ServerHello};
+
+\draw[<-] (0,-3) -- (7,-3);
+\node at (3.5,-2.7) {Certificate};
+
+\draw[<-] (0,-4) -- (7,-4);
+\node at (3.5,-3.7) {ServerHelloDone};
+
+\draw[->] (0,-5) -- (7,-5);
+\node at (3.5,-4.7) {ClientKeyExchange};
+
+\draw[->] (0,-6) -- (7,-6);
+\node at (3.5,-5.7) {ChangeCipherSpec};
+
+\draw[->] (0,-7) -- (7,-7);
+\node at (3.5,-6.7) {Finished};
+
+\draw[<-] (0,-8) -- (7,-8);
+\node at (3.5,-7.7) {ChangeCipherSpec / Finished};
+\end{tikzpicture}
+\caption{SSL握手协议流程图}
+\end{figure}
+
+
+{\heiti\zihao{4} 五、实验器材（设备、元器件）}
+\\
+安装Windows11 普通版的计算机（主机）\\
+安装Windows Server 2022 的计算机（服务器）\\
+IIS服务和证书服务\\
+
+{\heiti\zihao{4} 六、实验步骤：}
+
+\begin{enumerate}
+    \item 安装IIS服务和证书服务；
+    \item 启动IIS服务和证书服务；
+    \item 服务器证书申请、颁发和安装；
+    \item 客户端证书申请、颁发和安装；
+    \item 在服务器上配置SSL；
+    \item 客户端通过SSL与服务器建立连接；
+    \item 使用Wireshark抓包，分析SSL记录；
+    \item 使用Wireshark抓包，绘制SSL握手流程；
+    \item 分析证书。
+\end{enumerate}
+
+{\heiti\zihao{4} 七、实验数据及结果分析：}
+
+
+
+\textbf{（0）实验环境的验证}
+
+在客户端命令行中使用 \texttt{ping 192.168.29.130} 对服务器进行连通性测试，结果显示连续发送的 3 个数据包均成功收到回复，丢包率为 0\%，往返时间均小于 1 ms，说明客户端与服务器之间网络连通正常。
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{img/1.png}
+    \caption{实验环境连通性验证结果}
+\end{figure}
+
+通过 Ping 测试可以验证客户端与服务器之间的网络连接状态。从测试结果可知，客户端能够正常访问地址为 \texttt{192.168.29.130} 的服务器，且通信延迟较低、无丢包现象，表明当前实验环境网络配置正确，可以进行后续的 IIS 服务部署、证书申请以及 SSL 连接测试。
+
+
+
+\textbf{（1）安装IIS服务和证书服务}
+
+首先在“添加角色和功能向导”中选择需要安装的服务器角色，勾选 \texttt{Web服务器（IIS）} 和 \texttt{Active Directory 证书服务}，为后续搭建 Web 服务和证书颁发环境做准备。接着在 IIS 角色服务配置中勾选 \texttt{ASP}、\texttt{ISAPI 扩展}、\texttt{ISAPI 筛选器} 以及 \texttt{IIS 管理控制台} 等组件，以保证网页访问和证书服务页面能够正常运行。最后在证书服务角色配置中勾选 \texttt{证书颁发机构} 和 \texttt{证书颁发机构 Web 注册}，从而支持后续基于 Web 的证书申请、颁发与管理操作。
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{img/2.png}
+        \caption{选择服务器角色}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{img/3.png}
+        \caption{配置IIS角色服务}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.32\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{img/4.png}
+        \caption{配置证书服务角色}
+    \end{minipage}
+\end{figure}
+
+
+
+\textbf{（2）启动IIS服务和证书服务}
+
+完成 IIS 和证书服务的安装后，首先对证书服务进行基本配置。在配置过程中，选择将当前服务器设置为证书颁发机构（CA），并按照向导完成相关参数设置，使系统具备证书申请、签发和管理能力。配置完成后，证书服务即可通过 Web 注册页面对外提供证书申请与下载功能。
+\\在完成 IIS 安装后，继续配置 Active Directory 证书服务。
+配置过程中设置 CA 公用名称为 \texttt{llb}，系统预览的可分辨名称为 \texttt{CN=llb}。完成配置后，证书颁发机构与证书颁发机构 Web 注册功能均显示配置成功，说明 CA 服务及其 Web 注册组件已经可以正常工作，为后续服务器证书、客户端证书的申请与签发提供了基础环境。
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/7.png}
+        \small （a）指定 CA 名称
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/8.png}
+        \small （b）AD CS 配置结果
+    \end{minipage}
+    \caption{AD CS 证书服务配置过程}
+\end{figure}
+
+随后对 IIS 服务进行启动与验证。在浏览器中访问 \texttt{http://127.0.0.1}，成功打开 IIS 默认欢迎页面，说明 Web 服务器已经正常启动，能够提供基本的网页访问服务。继续访问 \texttt{http://127.0.0.1/certsrv}，若能够正常打开证书服务主页，并显示证书申请、查看申请状态以及下载 CA 证书等功能选项，则说明证书服务已经成功启动并完成 Web 注册配置。
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{img/5.png}
+        \caption{访问 IIS 默认页面}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{img/6.png}
+        \caption{访问证书服务 Web 注册页面}
+    \end{minipage}
+\end{figure}
+
+
+\textbf{（3）服务器证书申请、颁发和安装}
+
+在 IIS 管理器中进入服务器证书申请向导，首先填写证书的可分辨名称属性，其中通用名称设置为服务器 IP 地址 \texttt{192.168.88.130}，并补充组织、组织单位、城市、省份和国家等信息；随后选择加密服务提供程序 \texttt{Microsoft RSA SChannel Cryptographic Provider}，密钥长度设置为 2048 bit，以保证服务器证书具备足够的安全强度。完成向导后生成证书请求文件 \texttt{server.req}，其内容为 Base64 编码的 PKCS\#10 证书请求。然后通过证书服务 Web 注册页面提交该请求，并在附加属性中指定 \texttt{CertificateTemplate:WebServer}，将其作为 Web 服务器证书申请提交到 CA。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.32\textwidth]{img/9.png}
+    \hfill
+    \includegraphics[width=0.32\textwidth]{img/10.png}
+    \hfill
+    \includegraphics[width=0.32\textwidth]{img/11.png}
+    \caption{服务器证书申请过程}
+\end{figure}
+
+提交申请后，证书请求进入 CA 的挂起申请列表。管理员在证书颁发机构控制台中查看对应申请记录，并对该请求执行颁发操作。完成颁发后，即可在后续步骤中下载并安装服务器证书，为 IIS 站点配置 HTTPS 提供基础。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{img/12.png}
+    \hfill
+    \includegraphics[width=0.48\textwidth]{img/13.png}
+    \caption{服务器证书提交与颁发}
+\end{figure}
+
+
+
+
+
+
+\textbf{（4）客户端证书申请、颁发和安装}
+
+为满足实验中“客户端证书主体名字为姓名+学号”的要求，在客户端主机上采用离线方式生成客户端证书请求。首先编写证书请求配置文件 \texttt{clientreq}，其中在 \texttt{Subject} 字段中设置主题名为 \texttt{CN=llb2023080904007}，并指定增强型密钥用法 OID 为 \texttt{1.3.6.1.5.5.7.3.2}，用于表示客户端身份认证。随后利用 \texttt{certreq} 工具生成 Base64 编码的 PKCS\#10 证书请求文件 \texttt{client.req}，再提交至 CA 进行签发。证书签发完成后，将客户端证书安装到本地用户的个人证书存储区，以便后续客户端通过 SSL/TLS 与服务器建立安全连接。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{img/15.png}
+    \hfill
+    \includegraphics[width=0.48\textwidth]{img/16.png}
+    \caption{客户端证书请求文件与生成结果}
+\end{figure}
+
+\textbf{（5）在服务器上配置SSL}
+
+在 IIS 管理器中选择默认网站 \texttt{Default Web Site}，进入“绑定”设置页面，新增一条 HTTPS 绑定记录。配置过程中将类型设置为 \texttt{https}，IP 地址选择“全部未分配”，端口设置为 \texttt{443}，并在 SSL 证书下拉框中选择前面已经申请并安装完成的服务器证书 \texttt{192.168.88.130}。完成绑定后，IIS 即可通过 HTTPS 对外提供服务，为客户端通过 SSL/TLS 与服务器建立安全连接提供条件。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.78\textwidth]{img/14.png}
+    \caption{在 IIS 中为默认网站添加 HTTPS 绑定}
+\end{figure}
+
+
+
+\textbf{（6）客户端通过SSL与服务器建立连接}
+
+在客户端主机上使用浏览器访问服务器地址 \texttt{https://192.168.88.130}，客户端向服务器发起 HTTPS 请求，并通过 SSL/TLS 与服务器建立安全连接。实验过程中，浏览器返回 \texttt{404 Not Found} 页面，说明虽然默认资源未找到，但服务器已经能够通过 HTTPS 通道向客户端返回应用层响应，这表明 SSL/TLS 连接建立成功，后续可进一步结合 Wireshark 抓包分析握手过程与记录层结构。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.78\textwidth]{img/17.png}
+    \caption{客户端通过 HTTPS 与服务器建立连接}
+\end{figure}
+
+
+\textbf{(7)(8)Wireshark抓包，分析SSL记录与握手流程}
+
+在客户端通过 \texttt{https://192.168.88.130} 与服务器建立连接的过程中，使用 Wireshark 对通信过程进行抓包分析。抓包结果显示，客户端与服务器首先完成 TCP 连接建立，随后进入 TLS 握手阶段。客户端向服务器发送 \texttt{Client Hello} 报文，服务器返回 \texttt{Server Hello}，之后双方继续传输 \texttt{Application Data}，说明 SSL/TLS 连接已经建立并进入加密数据传输阶段。由于本实验环境采用较新的系统和协议栈，抓包结果中 TLS 1.3 报文展示较传统教材中的 TLS 1.0/1.2 更加紧凑，但其核心流程仍然体现了客户端发起协商、服务器响应协商以及后续加密数据传输的完整过程。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.78\textwidth]{img/18.png}
+    \caption{Wireshark 中捕获的 TLS 握手与加密传输过程}
+\end{figure}
+
+进一步展开其中一条 TLS 报文，可以观察到 TLS 记录层的具体格式。实验中截取的报文为 \texttt{TLSv1.3 Record Layer: Handshake Protocol: Client Hello}。其中，\texttt{Content Type} 的值为 \texttt{Handshake (22)}，表示该记录承载的是握手协议数据；\texttt{Version} 字段显示为 \texttt{TLS 1.0 (0x0301)}，这是 TLS 1.3 中记录层用于兼容性保留的版本字段；\texttt{Length} 的值为 \texttt{258}，表示该记录层负载长度为 258 字节。继续展开 \texttt{Handshake Protocol: Client Hello} 可见，其中包含客户端支持的协议版本、随机数、会话 ID、密码套件以及扩展字段等内容，这些参数共同参与后续的 SSL/TLS 安全协商。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.78\textwidth]{img/19.png}
+    \caption{TLS 记录层与 Client Hello 报文结构}
+\end{figure}
+
+
+需要说明的是，由于本实验环境采用较新的系统和协议栈，Wireshark 中实际抓包结果显示为 TLS 1.3，部分握手报文在展示上较传统 TLS 1.0/1.2 更加紧凑，但其核心流程仍可概括为客户端发起协商、服务器响应协商、双方切换到加密状态并传输应用数据。
+在 SSL/TLS 握手过程中，客户端首先发送 \texttt{Client Hello} 报文，向服务器声明支持的协议版本、随机数和密码套件；服务器返回 \texttt{Server Hello}，并发送服务器证书 \texttt{Certificate} 用于身份认证。客户端验证服务器证书后，发送 \texttt{Client Key Exchange} 完成密钥交换，随后双方通过 \texttt{Change Cipher Spec} 和 \texttt{Finished} 报文切换到加密状态。握手完成后，应用层数据以 \texttt{Application Data} 的形式进行加密传输。
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        font=\small,
+        >=Latex,
+        node distance=0.9cm
+    ]
+        % 两条生命线
+        \node (client) at (0,0) {\textbf{客户端}};
+        \node (server) at (8,0) {\textbf{服务器}};
+        \draw[dashed] (0,-0.5) -- (0,-8.8);
+        \draw[dashed] (8,-0.5) -- (8,-8.8);
+
+        % 报文箭头
+        \draw[->] (0,-1.0) -- (8,-1.0);
+        \node[above] at (4,-1.0) {1. Client Hello};
+
+        \draw[->] (8,-2.0) -- (0,-2.0);
+        \node[above] at (4,-2.0) {2. Server Hello};
+
+        \draw[->] (8,-3.0) -- (0,-3.0);
+        \node[above] at (4,-3.0) {3. Certificate};
+
+        \draw[->] (0,-4.0) -- (8,-4.0);
+        \node[above] at (4,-4.0) {4. Client Key Exchange};
+
+        \draw[->] (0,-5.0) -- (8,-5.0);
+        \node[above] at (4,-5.0) {5. Change Cipher Spec};
+
+        \draw[->] (0,-6.0) -- (8,-6.0);
+        \node[above] at (4,-6.0) {6. Finished};
+
+        \draw[->] (8,-7.0) -- (0,-7.0);
+        \node[above] at (4,-7.0) {7. Change Cipher Spec};
+
+        \draw[->] (8,-8.0) -- (0,-8.0);
+        \node[above] at (4,-8.0) {8. Finished};
+
+        % 应用数据
+        \draw[<->] (0,-8.6) -- (8,-8.6);
+        \node[below] at (4,-8.6) {9. Application Data（加密传输）};
+    \end{tikzpicture}
+    \caption{SSL/TLS 握手流程示意图}
+\end{figure}
+
+
+
+\textbf{（9）分析证书}
+
+通过对实验中生成和安装的 CA 证书、Web 服务器证书以及 Web 客户端证书进行查看，可以进一步分析三类证书在 SSL/TLS 体系中的作用。根证书用于建立信任锚点，服务器证书用于向客户端证明服务器身份，客户端证书则用于标识客户端身份。三类证书均采用 X.509 V3 格式，包含版本号、序列号、签名算法、颁发者、有效期、使用者、公钥信息等字段，这些属性共同决定了证书的用途与可信性。
+
+从证书常规信息可以看出，客户端证书的“颁发给”为 \texttt{llb2023080904007}，其用途为“向远程计算机证明你的身份”，说明该证书用于客户端身份认证；服务器证书的“颁发给”为 \texttt{192.168.88.130}，用途为“保证远程计算机的身份”，说明该证书用于服务器身份认证；CA 根证书的“颁发给”和“颁发者”均为 \texttt{llb}，表明该证书为自签名根证书，用于建立本实验环境中的信任链。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.32\textwidth]{img/20.png}
+    \hfill
+    \includegraphics[width=0.32\textwidth]{img/21.png}
+    \hfill
+    \includegraphics[width=0.32\textwidth]{img/22.png}
+    \caption{客户端证书、服务器证书与CA证书}
+\end{figure}
+
+进一步查看证书详细信息页，可以发现三类证书均为 \texttt{V3} 版本，签名算法均为 \texttt{sha256RSA}，哈希算法为 \texttt{sha256}。其中，客户端证书的颁发者为 \texttt{llb}，使用者为 \texttt{2023080904007}，有效期为 2026 年 3 月 21 日至 2027 年 3 月 21 日；服务器证书的颁发者同样为 \texttt{llb}，使用者中包含服务器地址 \texttt{192.168.88.130}，有效期为 2026 年 3 月 21 日至 2027 年 3 月 21 日；CA 证书的颁发者和使用者均为 \texttt{llb}，有效期延长至 2031 年 3 月 21 日，体现了根证书作为信任根的长期有效性。
+
+在证书校验过程中，需要重点关注以下属性：其一，证书是否处于有效期内；其二，证书颁发者是否受信任；其三，证书使用者是否与访问对象匹配；其四，证书签名算法、公钥长度和用途是否满足安全要求。本实验中，服务器证书的使用者与访问地址 \texttt{192.168.88.130} 一致，客户端证书主体名包含学号信息，CA 证书可作为信任链的根证书，因此三类证书共同构成了实验环境下完整的 PKI 证书体系。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.32\textwidth]{img/23.png}
+    \hfill
+    \includegraphics[width=0.32\textwidth]{img/24.png}
+    \hfill
+    \includegraphics[width=0.32\textwidth]{img/25.png}
+    \caption{CA 证书、服务器证书、客户端证书的常规信息}
+\end{figure}
+
+
+
+
+
+
+{\heiti\zihao{4} 八、实验结论、心得体会和改进建议：}
+
+本次实验围绕 SSL/TLS 与 PKI 的实际部署过程展开，完成了 IIS 服务、证书服务以及 HTTPS 安全访问环境的搭建，并对证书申请、证书颁发、证书安装、SSL/TLS 握手过程和记录层结构进行了综合分析。通过实验，成功配置了 AD CS 证书服务和 Web 注册功能，建立了实验环境中的 CA；完成了服务器证书和客户端证书的申请、颁发与安装，并在 IIS 中为默认网站成功绑定 HTTPS 服务；客户端能够通过 \texttt{https://192.168.88.130} 与服务器建立 SSL/TLS 安全连接。结合 Wireshark 抓包结果，可以观察到 \texttt{Client Hello}、\texttt{Server Hello} 以及后续 \texttt{Application Data} 等报文，验证了 SSL/TLS 在身份认证和加密传输中的实际作用。
+
+通过对三类证书的查看与分析，可以进一步理解证书链在安全通信中的意义。CA 根证书用于建立信任锚点，服务器证书用于证明服务器身份，客户端证书用于证明客户端身份。实验中服务器证书与访问地址 \texttt{192.168.88.130} 保持一致，能够满足 HTTPS 场景中的身份校验要求；客户端证书则体现了基于 PKI 的身份标识功能。通过对证书版本、签名算法、有效期、颁发者、使用者、公钥信息等字段的分析，可以更加直观地理解 X.509 证书在 SSL/TLS 体系中的组织方式和安全属性。
+
+在实验过程中，我对“证书申请—证书签发—证书安装—HTTPS 配置—握手建立—抓包分析”这一完整链路有了更加清晰的认识。相比只学习理论知识，亲自完成 IIS 配置、证书服务部署以及 TLS 报文分析后，更能够理解 HTTPS 建立安全连接的实际细节。例如，服务器证书的主体信息必须与访问标识匹配，否则容易在浏览器校验阶段出现问题；客户端证书能够体现用户身份；而 Wireshark 中记录层的 \texttt{Content Type}、\texttt{Version} 和 \texttt{Length} 等字段，则帮助我将抽象的协议过程和真实报文一一对应起来。虽然实验环境与教材示例在系统版本和 TLS 展示形式上存在差异，但这也让我进一步认识到不同系统和协议版本在实现细节上的变化。
+
+本实验也暴露出一些可以改进的地方。首先，在实验指导中可以进一步区分不同 Windows Server 版本下 IIS 与证书服务界面的差异，减少因界面变化带来的理解困难。其次，对于客户端证书申请部分，可同时提供在线申请与 \texttt{certreq} 离线申请两种参考方法，以提高实验的适应性和成功率。再次，在抓包分析部分，可补充对 TLS 1.3 与 TLS 1.2 报文展示差异的说明，帮助实验者更准确地理解新版协议中更紧凑的握手结构。总体来看，本实验有效加深了我对 SSL/TLS 协议和 PKI 机制的理解，使我对网络安全中身份认证、信任链建立和加密通信的实现过程有了更加系统和直观的认识。
+
+\end{document}
