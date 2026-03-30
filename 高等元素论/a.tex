@@ -1,0 +1,644 @@
+\documentclass[12pt,a4paper]{article}% 文档格式
+\usepackage{ctex,hyperref}% 输出汉字%支持超链接 
+\usepackage{times}% 英文使用Times New Roman
+
+\title{\fontsize{18pt}{27pt}\selectfont% 小四字号，1.5倍行距
+	{\heiti% 黑体 
+		高等元素基础理论简述}}% 题目
+
+\author{\fontsize{12pt}{18pt}\selectfont% 小四字号，1.5倍行距
+	{\fangsong% 仿宋
+		吕\thanks{中国自然基础与高等元素学院院士、高等元素学主要奠基人之一，主要成就：元素基础理论奠基人，吕氏法则，吕芙公式，元素理论学的泰斗级人物}
+		 \quad  Furina de Fontaine}	\thanks{法国国家高等元素科学院院士、高等元素学主要奠基人之一，主要成就：元素起源说，FDF公式}
+		  \quad 牛涛凡\thanks{英国化学与元素学院院士，主要成就：REP合一论，元素合一理论的开创人}
+			\quad 炯蕾·尹嘉维\thanks{美国国家科学院院士，主要成就：lopiter方法，quasepter理论，元素n向性理论开创人}
+			\quad 崔夏\thanks{日本化学与元素学院院士，主要成就：元素杂化原理，元素炯蕾·尹嘉维学科开创人}
+			\\% 标题栏脚注
+		\fontsize{10.5pt}{15.75pt}\selectfont% 五号字号，1.5倍行距
+	{\fangsong% 仿宋3
+	发起单位：电子科技大学 自然基础与高等元素院}}% 作者单位，“~”表示空格
+	
+\date{}% 日期（这里避免生成日期）
+
+\usepackage{amsmath,amsfonts,amssymb}% 为公式输入创造条件的宏包
+
+\usepackage{graphicx}% 图片插入宏包
+\usepackage{subfigure}% 并排子图
+\usepackage{float}% 浮动环境，用于调整图片位置
+\usepackage[export]{adjustbox}% 防止过宽的图片
+\usepackage{bibentry}
+\usepackage{natbib}% 以上2个为参考文献宏包
+
+\usepackage{abstract}% 两栏文档，一栏摘要及关键字宏包
+\renewcommand{\abstracttextfont}{\fangsong}% 摘要内容字体为仿宋
+\renewcommand{\abstractname}{\textbf{摘\quad 要}}% 更改摘要二字的样式
+
+
+\usepackage{xcolor}% 字体颜色宏包
+\newcommand{\red}[1]{\textcolor[rgb]{1.00,0.00,0.00}{#1}}
+\newcommand{\blue}[1]{\textcolor[rgb]{0.00,0.00,1.00}{#1}}
+\newcommand{\green}[1]{\textcolor[rgb]{0.00,1.00,0.00}{#1}}
+\newcommand{\darkblue}[1]
+{\textcolor[rgb]{0.00,0.00,0.50}{#1}}
+\newcommand{\darkgreen}[1]
+{\textcolor[rgb]{0.00,0.37,0.00}{#1}}
+\newcommand{\darkred}[1]{\textcolor[rgb]{0.60,0.00,0.00}{#1}}
+\newcommand{\brown}[1]{\textcolor[rgb]{0.50,0.30,0.00}{#1}}
+\newcommand{\purple}[1]{\textcolor[rgb]{0.50,0.00,0.50}{#1}}% 为使用方便而编辑的新指令
+\usepackage{amssymb}
+\usepackage{url}% 超链接
+\usepackage{bm}% 加粗部分公式
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{epstopdf}
+\usepackage{epsfig}
+\usepackage{longtable}% 长表格
+\usepackage{supertabular}% 跨页表格
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{changepage}% 换页
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{enumerate}% 短编号
+\usepackage{caption}% 设置标题
+\captionsetup[figure]{name=\fontsize{10pt}{15pt}\selectfont Figure}% 设置图片编号头
+\captionsetup[table]{name=\fontsize{10pt}{15pt}\selectfont Table}% 设置表格编号头
+
+\usepackage{indentfirst}% 中文首行缩进
+\usepackage[left=2.50cm,right=2.50cm,top=2.80cm,bottom=2.50cm]{geometry}% 页边距设置
+\renewcommand{\baselinestretch}{1.5}% 定义行间距（1.5）
+
+\usepackage{fancyhdr} %设置全文页眉、页脚的格式
+\pagestyle{fancy}
+\hypersetup{colorlinks=true,linkcolor=black}% 去除引用红框，改变颜色
+
+\begin{document}% 以下为正文内容
+	\maketitle% 产生标题，没有它无法显示标题
+	\lhead{}% 页眉左边设为空
+	\chead{}% 页眉中间设为空
+	\rhead{}% 页眉右边设为空
+	\lfoot{}% 页脚左边设为空
+	\cfoot{\thepage}% 页脚中间显示页码
+	\rfoot{}% 页脚右边设为空
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	\begin{abstract}
+		\fangsong 简述了高等元素论有关基础元素学，反应元素学，元素合一学，元素起源学，元素二逆向学，元素杂化学，元素炯蕾·尹嘉维学，多元元素学，元素场论，复杂元素场论学
+	\end{abstract}
+	
+	\begin{adjustwidth}{1.06cm}{1.06cm}
+		\fontsize{10.5pt}{15.75pt}\selectfont{\heiti{关键词：}\fangsong{高等元素，反应，起源，二逆向，杂化，炯蕾·尹嘉维，多元，场}}\\
+	\end{adjustwidth}
+	
+	\begin{center}% 居中处理
+		{\textbf{Abstract}}% 英文摘要
+	\end{center}
+	\begin{adjustwidth}{1.06cm}{1.06cm}% 英文摘要内容
+		\hspace{1.5em}This article briefly describes the basic elemental theory, reactive elemental theory, elemental unity theory, elemental origin theory, elemental reverse engineering, elemental heterochemistry, elemental analysis, multi-element theory, elemental field theory, and complex elemental field theory related to advanced elemental theory
+	\end{adjustwidth}
+
+	\newpage% 从新的一页继续
+% 目录
+\begin{center} 
+	\tableofcontents
+\end{center}
+\setcounter{page}{0}
+	% 设置当前页面格式 empty表示无页码
+\thispagestyle{empty}
+
+\newpage% 从新的一页继续
+
+%第一段
+\begin{center}
+		\section{高等元素学基础理论}
+		
+\end{center}
+\subsection{基本概念}
+	\subsubsection{元素}
+	\paragraph{元素}  元素是构成物质的基本单位，是构成所有物质的基本物质
+	\subsubsection{单位浓度}
+	\paragraph{单位浓度}($C$)  单位浓度是指单位体积内所含的某种元素的量，单位浓度是衡量元素浓度的基本单位
+	\subsubsection{湮灭时长}
+	\paragraph{湮灭时长}($T$) 单位元素从出现到消失的时间。单位：t
+
+	\subsubsection{单位作用效果大小}
+	\paragraph{单位作用效果大小($f$)} 单位作用效果大小是指单位元素在单位时间内对外界产生的作用效果的大小。
+
+	
+	\subsubsection{元素符号}
+	\paragraph{风：$f$}
+	\paragraph{岩：$y$}
+	\paragraph{雷：$l$}
+	\paragraph{草：$c$}
+	\paragraph{水：$s$}
+	\paragraph{火：$h$}
+	\paragraph{冰：$b$}
+	\subsection{元素性质}
+	\subsubsection{扩散性 ($\varepsilon$)}
+	扩散性意义：元素的扩散性是描述元素在内部或与其他物质之间传递作用性质的能力。\\
+
+	分类标准：扩散公式
+	\begin{equation}
+		\boxed{ \varepsilon =d*C } \notag
+	\end{equation}
+		其中：
+		$\varepsilon$ 为扩散性系数，$d$为距离，$C$为单位元素浓度
+	\begin{itemize}
+		\item 强扩散性:  $\varepsilon>0.75$ 
+		\item 弱扩散性:  $0.35<\varepsilon<0.75$ 
+		\item 基性：$\varepsilon<0.35$ 
+	\end{itemize}
+
+	\subsubsection{持久性 ($o$)}
+	持久性意义：元素的持久性描述元素存在时长的大小。\\
+
+	分类标准：持久性公式
+	\begin{equation}
+		\boxed{  o =\frac{T}{C} } \notag
+	\end{equation}
+		其中：
+		$o$ 为持久性系数，$T$为湮灭时长，$C$为单位元素浓度
+	\begin{itemize}
+		\item 持久性:  $o\ge 60 t$ 
+		\item 短暂性:  $o<60 t$ 
+	\end{itemize}
+
+	\subsubsection{力性 ($F$)}
+	力性意义：元素的反应性描述元素作用效果的大小。\\
+
+	分类标准：力性公式
+	\begin{equation}
+		\boxed{ F=Cf  } \notag
+	\end{equation}
+
+		其中：
+		$F$ 为力性系数，$C$为单位元素浓度，$f$为单位作用效果大小
+	\begin{itemize}
+		\item 强力性:  $F>0.6$ 
+		\item 弱力性:  $0.2<F<0.6$ 
+		\item 强弱双性:  $F<0.2$ 
+	\end{itemize}
+
+	\subsubsection{反应性 ($\chi_i $)}
+	\paragraph{反应性意义：}元素的反应性描述元素与其他元素相互作用的性质。
+	\paragraph{驱动元素}: 驱动元素是指能够引起其他元素发生反应的元素。
+	\paragraph{被动元素}:被动元素是指被其他元素驱动的元素。
+	\paragraph{lopiter法则}:即使两个元素相同，但处于不同的位置（驱动，被动）时，得到的反应性不同。
+	\paragraph{分类标准：lopiter方法}\footnote[1]{炯蕾·尹嘉维 于1900年发表关于反应性判断方法，称为lopiter方法（罗皮特方法）}
+	由此得出lopiter表：（注意：表格左侧是驱动元素，上侧是被动元素）
+
+	\begin{tabular}{|c|c|c|c|c|c|c|c|}
+		\hline
+		元素&风&岩&雷&草&水&火&冰\\
+		\hline
+		风&0.1&0&0.4&0.01&0.0037&0.8&0.0026\\
+		\hline
+		岩&0&0&0.001&0.0045&0.0091&0&0\\
+		\hline
+		雷&0.1&0.00042&0.9123&0.9821&0.987&0.991&0.621\\
+		\hline
+		草&0.0021&0.023&0.547&0.5&0.876&0.999&0.0031\\
+		\hline
+		水&0.01&0.01&0.5&0.5&0.01&0.993&0.3\\
+		\hline
+		火&0.1&0.002&0.976&0.991&0.891&0.5&0.679\\
+		\hline
+		冰&0.012&0&0.3&0.1&0.3&0.79&0.01\\
+		\hline
+	\end{tabular}
+	\paragraph{l-lop结论：}见1.3元素性质，分为：无反应性，弱反应性，温反应性，强反应性
+	\paragraph{l-lop简化：}表中数据表示方法：$L_{ij}$。e.g.风岩：$L_{fy}$
+
+
+	\subsection{元素性质}
+	性质表\footnote[2]{吕于1901年发表关于元素性质表}
+
+	\begin{longtable}{|c|c|c|c|c|}
+		\hline
+		元素&扩散性&持久性&力性&反应性\\
+		\hline
+		风&强扩散性&短暂性&弱力性&弱反应性\\
+		\hline
+		岩&基性&持久性&弱力性&无反应性\\
+		\hline
+		雷&强扩散性&短暂性&强力性&强反应性\\
+		\hline
+		草&弱扩散性&持久性&弱力性&温反应性\\
+		\hline
+		水&弱扩散性&持久性&强弱双性&温反应性\\
+		\hline
+		火&强扩散性&短暂性&强力性&强反应性\\
+		\hline
+		冰&基性&持久性&弱力性&弱反应性\\
+		\hline
+\end{longtable}
+
+\begin{center}
+\section{元素反应学说}\footnote[3]{由吕和Furina de Fontaine共同与1910年发现并创立，同年完善}
+\end{center}
+
+
+\subsection{反应基础理论}
+\paragraph*{反应烈度系数 $\kappa $ } 衡量反应剧烈程度的系数。
+反应烈度系数公式：
+\begin{equation}
+	\kappa =\varepsilon F \notag
+\end{equation}
+
+\paragraph*{反应完全系数 $\delta $ } 衡量反应完成程度的系数。
+反应完全系数公式：
+\begin{equation}
+	\delta =  \frac{\varepsilon \sum_{j=f}^{b}L_{kj}}{o} \tag{其中k为任意元素}
+\end{equation}
+
+\subsection{主要元素反应}
+\subsubsection{扩散反应}
+元素：风+其他元素\\
+\par aboin公式由Amada，牛涛凡发现并通过大量实验得出，H测定为104.56，在风系上连接了反应学两大系数，为之后REF合一公式打下重要基础。
+\begin{equation}
+\kappa \delta =H \notag
+\end{equation}
+
+\subsubsection{结晶反应}
+元素：岩+其他元素\\
+\par 结晶力公式（Rock公式）：衡量结晶反应后生成保护膜的保护效果大小
+\begin{equation}
+	R=F\frac{o}{R_s} \tag{$R_s$表示岩指数}
+\end{equation}
+
+
+\subsubsection{超导反应}
+元素：雷+冰\\
+\par Thundao公式\footnote[4]{炯蕾·尹嘉维于1904年得出，于1905得出雷导介质常数表}：衡量超导反应后生成超导距离和超导力大小的公式。
+\paragraph{超导距离$T_d$} 超导反应的范围大小，本质是圆的半径
+\paragraph{超导力$T_f$} 攻击效果大小
+
+\begin{align}
+&T_d=\int_{f}^{b} L_{lj}*\varepsilon_j dj \notag\\
+&T_f=\int_{f}^{b} T_d*F*X_j dj \tag{$X_j$表示雷导介质常数，详见雷导介质常数表}
+\end{align}
+
+
+
+\subsubsection{感电反应}
+元素：雷+水\\
+\par Thungan公式\footnote[5]{Furina de Fontaine于1904年得出，于1905得出雷感常数}：衡量感电反应后生成感电距离,感电力,感电时间的公式。
+\paragraph{感电距离$G_d$} 感电反应的范围大小，本质是圆的半径
+\paragraph{感电力$G_f$} 攻击效果大小
+\paragraph{感电时间$G_t$} 持续时间
+\paragraph{雷感系数$G$} 
+\begin{align}
+G_d=\tan^{-1} \nabla (\varepsilon _{l,s,1},\varepsilon _{l,s,2},\varepsilon _{l,s,3})\\
+G_f=\begin{bmatrix}
+	\frac{\partial }{\partial l}  &  \frac{\partial }{\partial ls}  & \frac{\partial }{\partial s}  \\
+	 F_l& F_{ls} & F_s\\
+	 o_s&o_{ls}  &o_l
+ \end{bmatrix}\\
+ G_t=\frac{o}{G} 
+\end{align}
+\subsubsection{超载反应}
+元素：雷+火\\
+\par Thunfire公式\footnote[6]{Furina de Fontaine于1903年得出}：衡量超载反应后超载力大小的公式。
+\paragraph{超载力$C_f$} 攻击效果大小
+
+\begin{equation}
+C_f=f_{lh}*f_j \notag
+\end{equation}
+\subsubsection{原激化反应}
+元素：雷+草\\
+\par Thungrass公式\footnote[7]{吕于1906年发现新的反应，Furina de Fontaine于1907年得出}：衡量超载反应后超载力大小的公式。
+\paragraph{激化力$J_f$} 攻击效果大小
+
+\begin{equation}
+J_f=f_{lh}*f_j \notag
+\end{equation}
+
+
+\paragraph{双元素催化作用} 原激化反应具有双元素催化作用，在一定条件下会激活不同元素
+\paragraph{Furina判据}判断原激化反应，激活雷还是草。\footnote[8]{Furina de Fontaine于1911年发现，并得出Furina判据}\\
+当满足Furina判据时，激活元素为雷元素：
+\begin{equation}
+	\frac{Furina}{Firina^{T}} \ge  \frac{\partial^2 \chi _{lc}}{\partial l\partial c}
+	\end{equation}
+当不满足Furina判据时，激活元素为雷元素：
+\begin{equation}
+	\frac{Furina}{Firina^{T}} < \frac{\partial^2 \chi _{lc}}{\partial l\partial c}
+	\end{equation}
+\subsubsection{绽放反应}\footnote[9]{由吕于1913年提出离散化反应中提出绽放反应，此前对于草系元素反应一直处于真空期}
+元素：草+水\\
+\par 离散化反应，草种子，绽放数公式
+\paragraph{离散化反应} 绽放反应的特点，草元素在绽放反应中不连续，离散进行反应的过程
+\paragraph{草种子}  描述草元素在绽放反应过程中，产生了离散化反应，离散化反应最小单位成为草种子
+\paragraph{绽放变量$T^{\emptyset}$} 
+绽放变量公式：
+
+\begin{equation}
+	T^{\emptyset}=\frac{ \varepsilon \eta \pi }{\rho \Upsilon \jmath }
+	\end{equation}
+	其中：$\varepsilon$ 代表环境常数，$\eta $草元素效率数  ，$\rho$ 微观草元素量， $ \Upsilon$ 宏观草元素质量， $\jmath$  牛涛凡系数，
+	所以的值可以参考绽放变量表进行计算\footnote[9]{由吕于1914年总结出，解决了绽放变量难以求解的问题公式，$T^{\emptyset}$的引入} 
+计算一次反应浓度为C的绽放反应所产生的绽放数，绽放数用于衡量反应效果的大小
+
+\begin{equation}
+n=\lim_{o \to \infty}\frac{\prod_{j=f}^{b} o_{cj}}{T^{\emptyset } } 
+\end{equation}
+
+\subsubsection{燃烧反应}\footnote[11]{由崔夏于1910年提出，并之后提出来蒸发反应，融化反应等，极大推动了火元素领域的反应发展}
+元素：草+火\\
+\paragraph{燃烧值$ \varpi $} 表现了燃烧反应的放射程度
+燃烧热力学公式：
+
+\begin{equation}
+P\left ( \varpi \right ) = \frac{\binom{M}{k}\cdot \binom{N-M}{n-k}}{\binom{N}{n}} 
+\end{equation}
+其中：$M$表示燃烧常数 ，$k$ 燃烧程度百分比， $N$ 草元素浓度 ，$n$ 火元素浓度。
+
+
+\subsubsection{蒸发反应}
+元素：水+火\\
+\paragraph{蒸发值$ \psi  $} 表现了蒸发反应的水发程度。
+蒸发公式：
+\begin{equation}
+	\psi =\frac{o-\varepsilon }{\sigma} 
+\end{equation}
+其中：$\sigma$表示蒸发系数。
+
+\subsubsection{融化反应}
+元素：火+冰\\
+\paragraph{融化值$ \beta   $} 表现了融化反应的融化程度。
+蒸发公式：
+\begin{equation}
+	\beta = \frac{{{ \mu _0}}}{{4 \pi }} \frac{{o \sin F}}{{{\varepsilon ^2}}} 
+\end{equation}
+其中：$\mu _0$表示蒸发系数。
+
+\subsubsection{冻结反应}\footnote[12]{由吕于1908年提出，是一种在反应原理学上革新的机制}
+元素：水+冰\\
+\paragraph{冻结值$\alpha $} 表现了冻结反应的冰化程度。
+蒸发公式：
+\begin{equation}
+\alpha = \frac{1}{\left(\varepsilon -1 \left) \cdot 2^{n-1}\right. \right.}-\frac{1}{\xi  \cdot 2^{n}} 
+\end{equation}
+其中：$\xi$表示蒸发系数。
+\begin{center}
+\section{牛涛凡:元素合一理论}
+\end{center}
+
+\subsection{牛涛凡——REP合一论}
+牛涛凡——REP合一论，是牛涛凡于1920年提出，认为元素之间可以相互转化，且元素之间必然存在统一的规律。
+牛涛凡所倡导的REP合一论，这一理论构想诞生于1920年，标志着他在化学及哲学领域的深刻洞察与前瞻思考。REP合一论的核心观点在于，它不仅仅是对传统元素观念的革新，更是对自然界中物质存在与转化规律的一种全新诠释。牛涛凡坚信，自然界中的各类元素，尽管在外观、性质上展现出千差万别的面貌，但它们之间并非孤立无援，而是处于一种动态平衡与相互转化的状态之中。
+
+这一理论的核心要义在于“合一”，即强调元素间存在的深层次统一性和内在关联性。牛涛凡认为，这种统一性不仅仅体现在化学性质上的相似性或差异性的表象之下，更在于它们遵循着一种普遍而深刻的自然法则。这些法则如同无形的纽带，将看似独立的元素紧密相连，使得它们在一定条件下能够相互转化，从而构成了自然界物质循环不息、生生不息的壮丽图景。
+
+为了支撑这一理论，牛涛凡可能深入研究了当时的化学理论、实验数据以及哲学思想，特别是那些探讨物质本质、变化规律以及宇宙统一性的学说。他或许还借鉴了量子力学的初步成果，以及当时正在兴起的系统论、整体论等思想，试图从更宏观、更全面的视角来审视和理解元素之间的关系。
+
+REP合一论的提出，不仅挑战了当时化学界的某些传统观念，激发了科学家们对元素本质及相互转化机制的深入探索，同时也为后来的科学研究和哲学思考提供了新的视角和启示。它鼓励人们超越表面的差异，去探寻隐藏在纷繁复杂现象背后的统一性和规律性，为认识自然、改造自然开辟了更加广阔的道路。
+\subsection{由aboin公式推导REP合一定理}
+我们总结一下现代反应学所得到的所有结论：
+\begin{align}
+	&\kappa \delta = H\\
+	&R = F\frac{o}{R_s}\\
+	&T_d=\int_{f}^{b} L_{lj}*\varepsilon_j dj\\
+	&T_f=\int_{f}^{b} T_d*F*X_j dj\\
+	&G_d=\tan^{-1} \nabla (\varepsilon _{l,s,1},\varepsilon _{l,s,2},\varepsilon _{l,s,3})\\
+	&G_f=\begin{bmatrix}
+		\frac{\partial }{\partial l}  &  \frac{\partial }{\partial ls}  & \frac{\partial }{\partial s}  \\
+		 F_l& F_{ls} & F_s\\
+		 o_s&o_{ls}  &o_l
+	 \end{bmatrix}\\
+	& G_t=\frac{o}{G} \\
+	&C_f=f_{lh}*f_j\\
+	&J_f=f_{lh}*f_j\\
+	&\frac{Furina}{Firina^{T}} \ge  \frac{\partial^2 \chi _{lc}}{\partial l\partial c}\\
+	&n=\lim_{o \to \infty}\frac{\prod_{j=f}^{b} o_{cj}}{T^{\emptyset } } \\
+	&P\left ( \varpi \right ) = \frac{\binom{M}{k}\cdot \binom{N-M}{n-k}}{\binom{N}{n}} \\
+	&	\psi =\frac{o-\varepsilon }{\sigma} \\
+	&\beta = \frac{{{ \mu _0}}}{{4 \pi }} \frac{{o \sin F}}{{{\varepsilon ^2}}} \\
+	&\alpha = \frac{1}{\left(\varepsilon -1 \left) \cdot 2^{n-1}\right. \right.}-\frac{1}{\xi  \cdot 2^{n}} \\
+	\end{align}
+
+看似杂乱无章，实则有迹可循，我们总结一下这些公式，可以发现，它们都遵循着一种统一的规律，即元素之间的相互转化。这种转化规律，正是牛涛凡——REP合一论的核心所在。
+
+从abion公式出发，由吕和Furina de Fontaine得出了REP雏形说，之后由牛涛凡耗时10年，在1930年总结出来REP合一定理，是现代元素合一学理论的开端与高潮。
+具体推导过程，详见1930年牛涛凡的《REP合一定理与元素合一学说》和国际高等元素学圆桌会议报告。
+\subsection{REP合一定理}
+风：$f$
+岩：$y$
+雷：$l$
+草：$c$
+水：$s$
+火：$h$
+冰：$b$
+\\
+REP合一定理：
+\begin{align}  
+  &\nabla \cdot \mathbf{f} =l_{\succ } c\\  
+  &\nabla \cdot \mathbf{y} = sh \\  
+  &\nabla \times  \mathbf{l} = -\cfrac{\partial \mathbf{b}}{\partial f }  \\  
+  &\nabla \times  \mathbf{c} = y +  \cfrac{\partial \mathbf{l_{\circ }^{\amalg } }}{\partial c}  \\ 
+  &\nabla \times  \mathbf{s} = s^{\bigtriangleup }  \times \cfrac{\partial \mathbf{h}}{\partial b} \\
+  &\nabla \times  \mathbf{h} = f\bowtie  \oint_{f}^{b}lc\begin{bmatrix}
+ 	s^{\forall } & h^{\dashv } \\
+  b^{\nabla } &\underbrace{f} 
+\end{bmatrix}  \\
+&\nabla\cdot \mathbf{b} = y\widetilde{l\sqrt[c]{s} } \otimes h\dagger b^{\bullet } 
+\end{align} 
+
+该公式统一了七大元素，可以由REP推导出所有的反应公式。
+
+
+\begin{center}
+\section{元素起源说}
+\end{center}
+
+\subsection{斯雷普起源理论}
+在遥远的宇宙深处，存在着一个称为“星际深渊”的神秘区域。这个区域是宇宙诞生之初遗留下的最后一片混沌之地，
+其中蕴含着宇宙最原始、最不稳定的力量。星际深渊不仅是宇宙暗物质的密集区，也是宇宙射线与高能粒子的天然加速器，
+孕育着无数未知的元素与奇异现象。在星际深渊的深处，一场前所未有的宇宙事件——“时空扭曲风暴”爆发了。
+这场风暴不仅扭曲了周围的时空结构，还引发了宇宙基本力场的异常波动。
+在这场风暴的核心，由极高能量密度的暗物质与反物质相互碰撞，产生了一种前所未有的能量释放。
+这种能量在极端条件下凝聚成了一种全新的、极其不稳定的物质形态——斯雷普元素。
+斯雷普元素以其独特的物理和化学性质而著称。
+它拥有极高的密度和强度，能够抵御几乎所有的已知物质侵蚀，甚至包括宇宙中最强大的辐射。
+然而，斯雷普元素也极度不稳定，需要持续不断地吸收或释放能量来维持其存在状态。这种特性使得斯雷普元素在宇宙中极为罕见，且难以被长期保存。
+尽管斯雷普元素难以捉摸，但其在宇宙中的存在却对周围的空间和时间产生了深远的影响。
+科学家们推测，斯雷普元素可能是连接不同宇宙或平行世界的桥梁，其能量波动能够扭曲时空结构，开启通往未知领域的门户。
+\\
+斯雷普公式：\footnote[13]{1891年由斯雷普提出的假说，并给出来如果存在，斯内普元素放射素大小公式（但至今没有实验可以证明）}
+\begin{equation}
+n_P=f(−1)~3y+[−4b_e]_J^σ
+\end{equation}
+\\
+证据：在风元素内疑似发现斯雷普元素，但尚未确定。\\
+问题：至今没有任何证据可以充分证明斯雷普元素的存在。
+
+\subsection{馁汉姆地起源理论}\footnote[14]{1897年由馁汉姆地由几内普生实验结果所提出的假说}
+
+在遥远的宇宙边缘，存在一个名为“馁汉姆地”的地方，孕育出奇异元素：馁汉姆地粒子。
+
+
+馁汉姆地元素可能起源于宇宙大爆炸后的早期阶段。在宇宙温度极高、密度极大的时期，某些特殊的核反应可能产生了馁汉姆地元素的前体粒子。
+随着宇宙的膨胀和冷却，恒星开始形成。在馁汉姆地星系中，某些特殊类型的恒星（如超新星、中子星等）内部发生了极端的核反应。
+这些反应不仅合成了已知的元素，还可能在特定条件下催生了馁汉姆地元素的诞生。恒星风、超新星爆炸等天体活动将恒星内部的物质抛入星际介质中。
+在馁汉姆地星际环境中，这些物质与暗物质、宇宙射线等发生复杂的相互作用，进一步促进了馁汉姆地元素的形成和稳定。
+经过上亿年的演化， 馁汉姆地元素在宇宙中逐渐积累和分布，形成了最初的七元素。
+
+证据：将七元素在特定的环境下合并反应，可以得到一种奇异元素，与馁汉姆地元素的逆向工程反应相似。\footnote[15]{1897年，几内普生实验结果表明将七元素在特定的环境下合并反应，可以得到一种奇异元素}\\
+问题：只有逆向工程，不能从馁汉姆地元素得到分解后的七元素。
+
+\subsection{FDF——Furina de Fontaine起源说}
+
+是当前证据最充分，且认可度最高的元素起源理论。
+FDF能量是七元素的起源，根据REP合一定理，FDF能量可以转化为七元素。
+
+FDF能量转化：\footnote[16]{1934年，Furina de Fontaine提出,过程详细见1924《FDF起源论——基于REP的元素起源发展》}
+
+\begin{align}  
+Furina_{\sum_{i=f}^{b} \sum_{j=f}^{b}\bigcup_{k=f}^b{E_{ijk}} }\Longleftrightarrow 
+&l_{\succ } c\\ 
+ &sh \\  
+ &-\cfrac{\partial \mathbf{b}}{\partial f }  \\  
+ &y +  \cfrac{\partial \mathbf{l_{\circ }^{\amalg } }}{\partial c}  \\ 
+&s^{\bigtriangleup }  \times \cfrac{\partial \mathbf{h}}{\partial b} \\
+&f\bowtie  \oint_{f}^{b}lc\begin{bmatrix}
+ 	s^{\forall } & h^{\dashv } \\
+  b^{\nabla } &\underbrace{f} 
+\end{bmatrix}  \\
+&y\widetilde{l\sqrt[c]{s} } \otimes h\dagger b^{\bullet } 
+\end{align} 
+\\
+证据：FDF能量可以转化为七元素，且七元素可以转化为FDF能量。\\
+问题：FDF能量来源未知。
+\begin{center}
+\section{吕-崔夏元素二逆向理论}
+\end{center}
+
+\subsection{吕氏定理}\footnote[17]{1934 吕开创了元素二像理论}
+元素二像理论：元素存在两种形态，即正态和反态。正态元素具有稳定的结构和性质，
+而反态元素则具有不稳定、反常的性质。这两种形态之间可以通过特定的转换过程相互转化，从而实现元素的稳定和反常状态的转换。
+\\
+正态:$\circ$，反态:$\bullet $
+
+\subsection{崔夏定理}\footnote[18]{1936 崔夏开创了元素逆向理论}
+元素逆向理论：元素在特定条件下可以逆向反应，即从一种元素转化为另一种元素。这种逆向反应通常需要特定的环境或条件，
+如高温、高压、强磁场等。逆向反应可以改变元素的化学性质和物理性质，使其表现出与正向反应完全不同的特性。
+\\
+原态：$\bigtriangleup$，逆态：$\bigtriangledown $
+
+\subsection{吕崔夏公式}\footnote[19]{1938 吕与崔夏开创了二逆向元素理论，成为解释元素二像与元素逆向的关键理论}
+元素二逆向理论：在原态基础上，进行逆向工程过程中，就可以到达元素二像，分解为正态和反态，再进行逆向工程，就可以达到反态与正态互换，达到逆态。
+\begin{align}
+	x^\bigtriangleup  \longrightarrow x^{\circ } +x^{\bullet } \longrightarrow x^{\bullet }+x^{\circ }\longrightarrow x^{\bigtriangledown } 
+\end{align}
+
+吕崔夏公式：求解变化中$ x^{\circ } $,$x^{\bullet }$的占比，并给出元素二逆向极限。
+\begin{align}
+	&p(x^{\circ })  =\oint { \mathord{ \buildrel{ \lower3pt \hbox{$ \scriptscriptstyle \rightharpoonup$}} \over B} \cdot {d \mathord{ \buildrel{ \lower3pt \hbox{$ \scriptscriptstyle \rightharpoonup$}} \over l}}  = { \mu _0}} I + { \mu _0}{I_d} \\
+	&p(x^\bullet )  = 1-p(x^\circ )
+	\end{align}
+元素二逆向极限：
+\begin{eqnarray}
+	\lim_{x \to \eth } {y_0} = A \cos ( \omega {t^{y_0}} + {y _0}) 
+	\end{eqnarray}
+也称崔夏极限。
+
+	\begin{center}
+		\section{炯蕾·尹嘉维杂化规则与元素炯蕾·尹嘉维学}
+		\end{center}
+	
+
+
+	\subsection{元素杂化原理}\footnote[20]{1940 吕与Furina de Fontaine开创了元素杂化原理}
+	元素杂化原理：多个元素共同反应所形成的复杂反应，称为杂化。其形成的场叫做杂化炯蕾·尹嘉维场。
+	\subsection{炯蕾·尹嘉维杂化规则论}\footnote[21]{1940 炯蕾·尹嘉维发现了重要的杂化规则论}
+
+
+\paragraph{雷火优先律} 在杂化反应中，雷元素与火元素一定优先反应，当两种元素同时存在，则按照浓度一一对应反应。
+\paragraph{杂化复杂律} 
+杂化反应中，杂化元素越多，杂化反应越复杂，杂化反应的复杂度与杂化元素的数量成正比。
+\paragraph{杂化平衡律} 
+\begin{align}
+	\frac{1}{\sqrt{f}} & = \frac{\sqrt{y}}{l}\\
+	\frac{c}{\sqrt{s}} & = \frac{1}{b}
+	\end{align}
+	\paragraph{杂化FDF炯蕾·尹嘉维律}
+由Furina de Fontaine 起源说，和REP合一定律，可以发现，在杂化到一定程度时可以产生FDF能量。
+这个极限杂化值被称为炯蕾·尹嘉维极限。
+\begin{align}
+\lim  s = \lambda = \frac{{ \frac{{{c^2}}}{v}}}{{ \frac{{m{c^2}}}{h}}}  
+\end{align}
+
+	\subsection{元素n向性}\footnote[22]{由炯蕾·尹嘉维于1941年的重大发现，推动了FDF起源论，炯蕾·尹嘉维学的发展}
+元素n向性：元素在杂化过程中，可以产生n向性，n向可以结合任意元素，但结合能力的大小决定了反应效果。
+同时当n向都存在元素反应时，就会产生FDF能量，同时FDF能量可以通过n向性破裂去接解除。
+
+\paragraph{炯蕾·尹嘉维向}  去除炯蕾·尹嘉维向，可以使得n向性破裂，解除FDF能量。
+\paragraph{FDF向}  FDF向可以结合任意元素，但结合能力的大小决定了反应效果。
+
+\subsection{元素炯蕾·尹嘉维学}	\footnote[23]{炯蕾·尹嘉维于1944年结合前人理论，撰写《元素炯蕾·尹嘉维学》标志元素炯蕾·尹嘉维学成立}
+
+现代元素炯蕾·尹嘉维学内容，请参考《元素炯蕾·尹嘉维学》
+
+		\begin{center}
+			\section{多元元素场以及复杂元素场论}
+		\end{center}
+	\subsection{理论}	\footnote[24]{由吕与炯蕾·尹嘉维于1945年提出}
+		对于元素场的标准定义与解释，并提出了复杂元素场论。具体请参考理论》
+		\paragraph{理论}
+		定义场原子，与场函数，进行场变换得到的场理论。具体请参考理论》
+	\subsection{元素场论}	\footnote[25]{由崔夏于1946年提出}
+		对于元素场的开拓。具体请参考《元素场论》
+		\paragraph{元素场论} 
+		崔夏理论基础上，提出了具体的f场,y场,l场,c场,s场,h场,b场。
+
+	\subsection{复杂元素场论}	\footnote[25]{由崔夏于1950年提出}
+		对于元素场的复杂性理论的开拓。具体请参考《复杂元素场论》
+\paragraph{复杂元素场论} 复杂元素场论，是元素场论的一个分支，主要研究复杂元素场。崔夏在1946年的基础上，总结出了fy,lc,hb,sh,fl,cs,bl,scsb,hcb,fyl等重要场，填补了复杂多元场论的空白。
+
+
+
+
+
+
+% 参考文献
+\begin{thebibliography}{99}
+	\bibitem{ref0}吕.高等元素导论[M]
+	\bibitem{ref1}吕.基础元素学[M]
+	\bibitem{ref2}炯蕾·尹嘉维.lopiter方法[M]
+	\bibitem{ref3}吕.元素反应学[M]
+	\bibitem{ref4}Furina de Fontaine .吕.扩散aboin公式[M]
+	\bibitem{ref5}Rock.结晶力猜想[M]
+	\bibitem{ref6}Furina de Fontaine.雷系反应学[M]
+	\bibitem{ref7}Furina de Fontaine.雷导学[M]
+	\bibitem{ref8}Furina de Fontaine.雷感学[M]
+	\bibitem{ref9}Furina de Fontaine.超载学[M]
+	\bibitem{ref10}Furina de Fontaine.吕.原激化理论与Furina判据[M]
+	\bibitem{ref11}吕.绽放反应[M]
+	\bibitem{ref12}吕.绽放变量论[M]
+	\bibitem{ref13}吕.绽放数[M]
+	\bibitem{ref14}崔夏.火系反应学[M]
+	\bibitem{ref15}吕.冻结反应——基础反应新机制[M]
+	\bibitem{ref16}吕.Furina de Fontain. REP雏形[M]
+	\bibitem{ref17}牛涛凡.REP 合一定理与元素合一学说[M]
+	\bibitem{ref18}斯雷普.斯雷普起源
+	\bibitem{ref19}馁汉姆地.馁汉姆地起源
+	\bibitem{ref20}几内普生.奇异元素实验
+	\bibitem{ref21}Furina de Fontaine.FDF 起源论——基于 REP 的元素起源发展
+	\bibitem{ref22}吕.元素二像理论
+	\bibitem{ref23}.元素逆向理论
+	\bibitem{ref24}吕.崔夏.二逆向元素理论
+	\bibitem{ref25}吕.崔夏，吕崔夏公式
+	\bibitem{ref26}吕.Furina de Fontaine.元素杂化原理
+	\bibitem{ref27}崔夏 .杂化规则论
+	\bibitem{ref28}炯蕾·尹嘉维. 元素 n 向性
+	\bibitem{ref29}炯蕾·尹嘉维 .元素炯蕾·尹嘉维学
+	\bibitem{ref30}吕.场理论
+	\bibitem{ref31}崔夏. 元素场论
+	\bibitem{ref32}崔夏. 复杂元素场论
+
+\end{thebibliography}
+
+	% 用来设置正文文献引用
+\bibliographystyle{plain}
+\bibliography{ref}
+\end{document}% 结束文档编辑，后面写啥都编译不出来
+

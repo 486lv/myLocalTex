@@ -1,0 +1,92 @@
+\contentsline {section}{\numberline {1}高等元素学基础理论}{1}{section.1}%
+\contentsline {subsection}{\numberline {1.1}基本概念}{1}{subsection.1.1}%
+\contentsline {subsubsection}{\numberline {1.1.1}元素}{1}{subsubsection.1.1.1}%
+\contentsline {paragraph}{元素}{1}{section*.2}%
+\contentsline {subsubsection}{\numberline {1.1.2}单位浓度}{1}{subsubsection.1.1.2}%
+\contentsline {paragraph}{单位浓度}{1}{section*.3}%
+\contentsline {subsubsection}{\numberline {1.1.3}湮灭时长}{1}{subsubsection.1.1.3}%
+\contentsline {paragraph}{湮灭时长}{1}{section*.4}%
+\contentsline {subsubsection}{\numberline {1.1.4}单位作用效果大小}{1}{subsubsection.1.1.4}%
+\contentsline {paragraph}{单位作用效果大小($f$)}{1}{section*.5}%
+\contentsline {subsubsection}{\numberline {1.1.5}元素符号}{1}{subsubsection.1.1.5}%
+\contentsline {paragraph}{风：$f$}{1}{section*.6}%
+\contentsline {paragraph}{岩：$y$}{1}{section*.7}%
+\contentsline {paragraph}{雷：$l$}{1}{section*.8}%
+\contentsline {paragraph}{草：$c$}{1}{section*.9}%
+\contentsline {paragraph}{水：$s$}{1}{section*.10}%
+\contentsline {paragraph}{火：$h$}{1}{section*.11}%
+\contentsline {paragraph}{冰：$b$}{1}{section*.12}%
+\contentsline {subsection}{\numberline {1.2}元素性质}{2}{subsection.1.2}%
+\contentsline {subsubsection}{\numberline {1.2.1}扩散性 ($\varepsilon $)}{2}{subsubsection.1.2.1}%
+\contentsline {subsubsection}{\numberline {1.2.2}持久性 ($o$)}{2}{subsubsection.1.2.2}%
+\contentsline {subsubsection}{\numberline {1.2.3}力性 ($F$)}{2}{subsubsection.1.2.3}%
+\contentsline {subsubsection}{\numberline {1.2.4}反应性 ($\chi _i $)}{3}{subsubsection.1.2.4}%
+\contentsline {paragraph}{反应性意义：}{3}{section*.13}%
+\contentsline {paragraph}{驱动元素}{3}{section*.14}%
+\contentsline {paragraph}{被动元素}{3}{section*.15}%
+\contentsline {paragraph}{lopiter法则}{3}{section*.16}%
+\contentsline {paragraph}{分类标准：lopiter方法}{3}{section*.17}%
+\contentsline {paragraph}{l-lop结论：}{3}{section*.18}%
+\contentsline {paragraph}{l-lop简化：}{3}{section*.19}%
+\contentsline {subsection}{\numberline {1.3}元素性质}{3}{subsection.1.3}%
+\contentsline {section}{\numberline {2}元素反应学说}{4}{section.2}%
+\contentsline {subsection}{\numberline {2.1}反应基础理论}{4}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}主要元素反应}{4}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}扩散反应}{4}{subsubsection.2.2.1}%
+\contentsline {subsubsection}{\numberline {2.2.2}结晶反应}{5}{subsubsection.2.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.3}超导反应}{5}{subsubsection.2.2.3}%
+\contentsline {paragraph}{超导距离$T_d$}{5}{section*.24}%
+\contentsline {paragraph}{超导力$T_f$}{5}{section*.25}%
+\contentsline {subsubsection}{\numberline {2.2.4}感电反应}{5}{subsubsection.2.2.4}%
+\contentsline {paragraph}{感电距离$G_d$}{5}{section*.28}%
+\contentsline {paragraph}{感电力$G_f$}{5}{section*.29}%
+\contentsline {paragraph}{感电时间$G_t$}{5}{section*.30}%
+\contentsline {paragraph}{雷感系数$G$}{6}{section*.31}%
+\contentsline {subsubsection}{\numberline {2.2.5}超载反应}{6}{subsubsection.2.2.5}%
+\contentsline {paragraph}{超载力$C_f$}{6}{section*.32}%
+\contentsline {subsubsection}{\numberline {2.2.6}原激化反应}{6}{subsubsection.2.2.6}%
+\contentsline {paragraph}{激化力$J_f$}{6}{section*.33}%
+\contentsline {paragraph}{双元素催化作用}{6}{section*.34}%
+\contentsline {paragraph}{Furina判据}{7}{section*.35}%
+\contentsline {subsubsection}{\numberline {2.2.7}绽放反应}{7}{subsubsection.2.2.7}%
+\contentsline {paragraph}{离散化反应}{7}{section*.36}%
+\contentsline {paragraph}{草种子}{7}{section*.37}%
+\contentsline {paragraph}{绽放变量$T^{\emptyset }$}{7}{section*.38}%
+\contentsline {subsubsection}{\numberline {2.2.8}燃烧反应}{7}{subsubsection.2.2.8}%
+\contentsline {paragraph}{燃烧值$ \varpi $}{8}{section*.39}%
+\contentsline {subsubsection}{\numberline {2.2.9}蒸发反应}{8}{subsubsection.2.2.9}%
+\contentsline {paragraph}{蒸发值$ \psi $}{8}{section*.40}%
+\contentsline {subsubsection}{\numberline {2.2.10}融化反应}{8}{subsubsection.2.2.10}%
+\contentsline {paragraph}{融化值$ \beta $}{8}{section*.41}%
+\contentsline {subsubsection}{\numberline {2.2.11}冻结反应}{8}{subsubsection.2.2.11}%
+\contentsline {paragraph}{冻结值$\alpha $}{8}{section*.42}%
+\contentsline {section}{\numberline {3}牛涛凡:元素合一理论}{9}{section.3}%
+\contentsline {subsection}{\numberline {3.1}牛涛凡——REP合一论}{9}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}由aboin公式推导REP合一定理}{10}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}REP合一定理}{11}{subsection.3.3}%
+\contentsline {section}{\numberline {4}元素起源说}{11}{section.4}%
+\contentsline {subsection}{\numberline {4.1}斯雷普起源理论}{11}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}馁汉姆地起源理论}{12}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}FDF——Furina de Fontaine起源说}{13}{subsection.4.3}%
+\contentsline {section}{\numberline {5}吕-崔夏元素二逆向理论}{13}{section.5}%
+\contentsline {subsection}{\numberline {5.1}吕氏定理}{13}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}崔夏定理}{14}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}吕崔夏公式}{14}{subsection.5.3}%
+\contentsline {section}{\numberline {6}炯蕾·尹嘉维杂化规则与元素炯蕾·尹嘉维学}{14}{section.6}%
+\contentsline {subsection}{\numberline {6.1}元素杂化原理}{14}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}炯蕾·尹嘉维杂化规则论}{14}{subsection.6.2}%
+\contentsline {paragraph}{雷火优先律}{15}{section*.43}%
+\contentsline {paragraph}{杂化复杂律}{15}{section*.44}%
+\contentsline {paragraph}{杂化平衡律}{15}{section*.45}%
+\contentsline {paragraph}{杂化FDF炯蕾·尹嘉维律}{15}{section*.46}%
+\contentsline {subsection}{\numberline {6.3}元素n向性}{15}{subsection.6.3}%
+\contentsline {paragraph}{炯蕾·尹嘉维向}{15}{section*.47}%
+\contentsline {paragraph}{FDF向}{15}{section*.48}%
+\contentsline {subsection}{\numberline {6.4}元素炯蕾·尹嘉维学}{15}{subsection.6.4}%
+\contentsline {section}{\numberline {7}多元元素场以及复杂元素场论}{16}{section.7}%
+\contentsline {subsection}{\numberline {7.1}理论}{16}{subsection.7.1}%
+\contentsline {paragraph}{理论}{16}{section*.49}%
+\contentsline {subsection}{\numberline {7.2}元素场论}{16}{subsection.7.2}%
+\contentsline {paragraph}{元素场论}{16}{section*.50}%
+\contentsline {subsection}{\numberline {7.3}复杂元素场论}{16}{subsection.7.3}%
+\contentsline {paragraph}{复杂元素场论}{16}{section*.51}%
