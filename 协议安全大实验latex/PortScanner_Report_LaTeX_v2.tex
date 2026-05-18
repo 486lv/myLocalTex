@@ -1,0 +1,1184 @@
+\documentclass[UTF8,a4paper,12pt]{ctexart}
+
+% =========================
+% 基础排版
+% =========================
+\usepackage{geometry}
+\geometry{left=2.6cm,right=2.6cm,top=2.5cm,bottom=2.5cm}
+
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usepackage{fvextra}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, fit, backgrounds}
+
+% =========================
+% 页眉页脚：统一实验名称
+% =========================
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{多线程端口扫描编程}
+\rhead{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue
+}
+
+% =========================
+% 表格列类型
+% =========================
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+% =========================
+% 代码样式
+% =========================
+\lstset{
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue!70!black},
+    commentstyle=\color{gray},
+    stringstyle=\color{red!60!black},
+    breaklines=true,
+    breakatwhitespace=false,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    tabsize=4,
+    showstringspaces=false,
+    columns=fullflexible,
+    keepspaces=true
+}
+
+% =========================
+% 图形样式
+% =========================
+\tikzset{
+    block/.style={
+        draw,
+        rounded corners=3pt,
+        align=center,
+        minimum height=0.85cm,
+        text width=3.4cm,
+        font=\small
+    },
+    smallblock/.style={
+        draw,
+        rounded corners=3pt,
+        align=center,
+        minimum height=0.75cm,
+        text width=2.7cm,
+        font=\small
+    },
+    wideblock/.style={
+        draw,
+        rounded corners=3pt,
+        align=center,
+        minimum height=0.85cm,
+        text width=4.4cm,
+        font=\small
+    },
+    decision/.style={
+        draw,
+        diamond,
+        aspect=2.2,
+        align=center,
+        inner sep=1pt,
+        text width=2.6cm,
+        font=\small
+    },
+    arrow/.style={-Latex, thick},
+    dashedarrow/.style={-Latex, thick, dashed}
+}
+
+\title{\textbf{期末大作业实验报告}\\多线程端口扫描编程}
+\author{姓名：吕乐彬 \quad 学号：2023080904007}
+
+\begin{document}
+
+\maketitle
+
+\vspace{1em}
+
+\noindent 课程名称：网络安全协议综合实验
+
+\vspace{0.8em}
+
+\noindent 实验名称：端口扫描编程（要求图形界面、多线程 2--3 线程，并测试 Radius 1812 和 1813 端口）
+
+\vspace{0.8em}
+
+\noindent 难度值：5
+
+\vspace{0.8em}
+
+\noindent 开发语言：C\#
+
+\vspace{0.8em}
+
+\noindent 开发环境：Windows 11 + Visual Studio 2026 + .NET Framework + Windows Forms
+
+\vspace{1.5em}
+
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{实验名称}
+
+多线程端口扫描编程与 Radius 1812/1813 端口测试。
+
+\section{实验内容和目的}
+
+\subsection{实验内容}
+
+本实验完成一个基于 C\# Windows Forms 的图形化多线程端口扫描程序。程序能够由用户输入目标主机、起始端口、结束端口、线程数、超时时间和扫描协议，并通过 2--3 个工作线程对目标端口进行并发扫描。实验重点测试 Radius 服务常用端口 1812 和 1813，验证扫描器能否正确识别 TCP 与 UDP 端口状态。
+
+本实验包含两个可执行程序：
+
+\begin{enumerate}[itemsep=2pt]
+    \item \textbf{PortScannerGUI}：图形化端口扫描器，是本实验的核心程序。
+    \item \textbf{RadiusMockServer}：Radius 端口模拟服务，用于在本机监听 TCP/UDP 1812 和 1813 端口，方便验证扫描器功能。
+\end{enumerate}
+
+\subsection{实验目的}
+
+本实验的目的包括：
+
+\begin{enumerate}[itemsep=2pt]
+    \item 理解 IP 地址、端口、TCP、UDP 和端口扫描之间的关系。
+    \item 掌握 TCP connect 端口扫描的基本原理。
+    \item 理解 UDP 扫描结果中 \texttt{Open|Filtered} 状态产生的原因。
+    \item 掌握 C\# 中 \texttt{TcpClient}、\texttt{UdpClient} 和 Socket 网络编程的基本用法。
+    \item 掌握 Windows Forms 图形界面程序设计方法。
+    \item 掌握使用 \texttt{Thread} 和 \texttt{ConcurrentQueue} 实现多线程任务调度的方法。
+    \item 完成 Radius 1812 与 1813 端口测试，并对实验结果进行分析。
+\end{enumerate}
+
+\section{实验原理}
+
+\subsection{端口与网络服务}
+
+在 TCP/IP 网络中，IP 地址用于定位网络中的一台主机，端口号用于定位该主机上的某个具体服务。可以理解为：
+
+\begin{center}
+\begin{tabular}{cc}
+\toprule
+概念 & 作用 \\
+\midrule
+IP 地址 & 确定是哪一台主机 \\
+端口号 & 确定这台主机上的哪一个服务 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+端口号范围为 0 到 65535。常见服务端口如表 \ref{tab:ports} 所示。
+
+\begin{table}[H]
+\centering
+\caption{常见端口及服务}
+\label{tab:ports}
+\begin{tabularx}{0.82\textwidth}{C{2.2cm}C{2.4cm}Y}
+\toprule
+端口号 & 协议 & 常见服务 \\
+\midrule
+80 & TCP & HTTP Web 服务 \\
+443 & TCP & HTTPS 安全 Web 服务 \\
+53 & TCP/UDP & DNS 域名解析服务 \\
+1812 & UDP/TCP & Radius 认证服务 \\
+1813 & UDP/TCP & Radius 计费服务 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Radius 全称为 Remote Authentication Dial-In User Service，常用于 VPN、无线网络、校园网、网络设备登录等场景中的认证、授权和计费。本实验关注的两个端口为：
+
+\begin{itemize}[itemsep=2pt]
+    \item \textbf{1812}：Radius Authentication，主要用于用户认证。
+    \item \textbf{1813}：Radius Accounting，主要用于计费和使用记录。
+\end{itemize}
+
+\subsection{端口扫描基本思想}
+
+端口扫描的本质是：扫描器对目标主机的某个端口发起连接或探测请求，根据目标主机的响应情况判断端口状态。端口可能处于开放、关闭、超时或被过滤等状态。
+
+\begin{table}[H]
+\centering
+\caption{端口状态含义}
+\label{tab:status}
+\begin{tabularx}{0.92\textwidth}{C{3cm}Y}
+\toprule
+状态 & 含义 \\
+\midrule
+\texttt{Open} & 端口开放，目标主机上有服务正在监听该端口。 \\
+\texttt{Closed} & 目标主机可达，但该端口没有服务监听。 \\
+\texttt{Filtered/Timeout} & 扫描请求超时，可能被防火墙过滤，也可能是目标无响应。 \\
+\texttt{Open|Filtered} & 常见于 UDP 扫描，没有收到明确响应，因此无法完全区分开放还是被过滤。 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+端口扫描基本过程如图 \ref{fig:scan_flow1} 所示。
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.4cm and 2.2cm,
+    >=Latex,
+    box/.style={
+        draw,
+        rounded corners=3pt,
+        align=center,
+        minimum width=3.5cm,
+        minimum height=1cm,
+        font=\small
+    },
+    arrow/.style={->, thick}
+]
+    % 第一行：扫描器和目标主机
+    \node[box] (scanner) {端口扫描器\\PortScannerGUI};
+    \node[box, right=4.2cm of scanner] (host) {目标主机\\127.0.0.1};
+
+    % 第二行：监听服务
+    \node[box, below=1.8cm of host] (service) {监听端口服务\\1812 / 1813};
+
+    % 扫描请求：上方箭头
+    \draw[arrow] 
+        ([yshift=0.22cm]scanner.east) -- 
+        node[above, font=\small] {连接或探测请求} 
+        ([yshift=0.22cm]host.west);
+
+    % 返回结果：下方箭头
+    \draw[arrow] 
+        ([yshift=-0.22cm]host.west) -- 
+        node[below, font=\small] {成功 / 拒绝 / 超时 / 响应} 
+        ([yshift=-0.22cm]scanner.east);
+
+    % 目标主机和监听服务之间的关系
+    \draw[arrow, dashed] 
+        (host.south) -- 
+        node[right, font=\small] {端口监听} 
+        (service.north);
+\end{tikzpicture}
+\caption{端口扫描基本过程示意图}
+\label{fig:scan_flow1}
+\end{figure}
+
+\subsection{TCP connect 扫描原理}
+
+TCP 是面向连接的传输层协议。客户端访问服务器时，需要先建立连接。TCP connect 扫描正是利用这一特性，通过尝试连接目标端口来判断端口是否开放。
+
+本实验中，TCP 扫描使用 C\# 的 \texttt{TcpClient} 实现，其判断逻辑如下：
+
+\begin{enumerate}[itemsep=2pt]
+    \item 调用 \texttt{BeginConnect(host, port, ...)} 尝试连接目标端口。
+    \item 使用 \texttt{AsyncWaitHandle.WaitOne(timeoutMs)} 等待连接结果。
+    \item 如果在超时时间内连接成功，则端口状态为 \texttt{Open}。
+    \item 如果连接失败或抛出异常，则端口可能为 \texttt{Closed} 或 \texttt{Closed/Error}。
+    \item 如果等待超时，则端口状态为 \texttt{Filtered/Timeout}。
+\end{enumerate}
+
+TCP connect 扫描逻辑如图 \ref{fig:tcp_scan} 所示。
+
+\begin{figure}[H]
+\centering
+\resizebox{0.78\textwidth}{!}{
+\begin{tikzpicture}[node distance=1.3cm]
+    \node[wideblock] (start) {开始扫描某 TCP 端口};
+    \node[wideblock, below=of start] (connect) {调用 \texttt{connect}\\发起 TCP 连接};
+    \node[decision, below=of connect] (judge) {是否连接成功？};
+
+    \node[smallblock, below left=1.2cm and 1.5cm of judge] (open) {\texttt{Open}\\端口开放};
+    \node[smallblock, below right=1.2cm and 1.5cm of judge] (closed) {\texttt{Closed/Timeout}\\关闭或超时};
+
+    \draw[arrow] (start) -- (connect);
+    \draw[arrow] (connect) -- (judge);
+    \draw[arrow] (judge.south west) -- node[left, font=\small]{是} (open.north);
+    \draw[arrow] (judge.south east) -- node[right, font=\small]{否} (closed.north);
+\end{tikzpicture}
+}
+\caption{TCP connect 扫描原理}
+\label{fig:tcp_scan}
+\end{figure}
+
+\subsection{UDP 探测原理}
+
+UDP 是无连接协议，发送 UDP 数据前不需要建立连接。因此 UDP 扫描不能像 TCP connect 扫描那样通过“连接成功”直接判断端口开放。本实验中的 UDP 扫描采用“发送探测包并等待响应”的方式。
+
+程序向目标 UDP 端口发送字符串：
+
+\begin{center}
+\texttt{RADIUS-PROBE}
+\end{center}
+
+然后等待目标端口返回数据。判断逻辑如下：
+
+\begin{enumerate}[itemsep=2pt]
+    \item 如果收到 UDP 响应，则判断端口为 \texttt{Open}。
+    \item 如果收到端口不可达或连接重置，则判断端口为 \texttt{Closed}。
+    \item 如果超时无响应，则判断为 \texttt{Open|Filtered}。
+\end{enumerate}
+
+需要注意的是，真实 UDP 服务收到未知探测包后可能不会回复，所以 UDP 扫描结果需要谨慎分析。本实验为了稳定验证功能，使用 \texttt{RadiusMockServer} 对 UDP 1812 和 1813 主动返回 \texttt{RADIUS-MOCK-OK} 响应。
+
+\subsection{多线程扫描原理}
+
+端口扫描属于典型的 I/O 等待型任务。连接目标端口时，程序经常需要等待网络返回结果或等待超时。如果使用单线程逐个端口扫描，效率较低。多线程扫描的思想是：将待扫描端口放入一个线程安全任务队列，再启动多个工作线程同时从队列中取任务并执行扫描。
+
+本实验使用 \texttt{ConcurrentQueue<int>} 保存待扫描端口，用 2--3 个 \texttt{Thread} 对端口进行并发扫描。多线程结构如图 \ref{fig:thread_scan} 所示。
+
+\begin{figure}[H]
+\centering
+\resizebox{0.86\textwidth}{!}{
+\begin{tikzpicture}[node distance=1.25cm and 1.1cm]
+    \node[wideblock] (queue) {线程安全端口任务队列\\\texttt{ConcurrentQueue<int>}};
+
+    \node[smallblock, below left=1.2cm and 1.4cm of queue] (w1) {\texttt{ScanWorker-1}};
+    \node[smallblock, below=1.2cm of queue] (w2) {\texttt{ScanWorker-2}};
+    \node[smallblock, below right=1.2cm and 1.4cm of queue] (w3) {\texttt{ScanWorker-3}};
+
+    \node[wideblock, below=2.0cm of w2] (result) {扫描结果显示到界面\\\texttt{ListView}};
+
+    \draw[arrow] (queue.south west) -- node[left, font=\small]{取端口} (w1.north);
+    \draw[arrow] (queue.south) -- node[right, font=\small]{取端口} (w2.north);
+    \draw[arrow] (queue.south east) -- node[right, font=\small]{取端口} (w3.north);
+
+    \draw[arrow] (w1.south) -- (result.north west);
+    \draw[arrow] (w2.south) -- (result.north);
+    \draw[arrow] (w3.south) -- (result.north east);
+\end{tikzpicture}
+}
+\caption{多线程端口扫描结构}
+\label{fig:thread_scan}
+\end{figure}
+
+\section{实验器材（设备、软件环境）}
+
+\subsection{硬件环境}
+
+本实验在 Windows 11 主机上完成，硬件环境如表 \ref{tab:hardware} 所示。
+\begin{table}[H]
+\centering
+\caption{实验硬件环境}
+\label{tab:hardware}
+\begin{tabularx}{0.88\textwidth}{C{3cm}Y}
+\toprule
+项目 & 配置 \\
+\midrule
+操作系统 & Windows 11 \\
+处理器 & AMD Ryzen 7 7840H w/ Radeon 780M Graphics \\
+网络环境 & 本机回环地址 \texttt{127.0.0.1}，用于本地端口测试 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{软件环境}
+
+\begin{table}[H]
+\centering
+\caption{实验软件环境}
+\label{tab:software}
+\begin{tabularx}{0.88\textwidth}{C{3cm}Y}
+\toprule
+项目 & 说明 \\
+\midrule
+开发工具 & Visual Studio 2026 \\
+开发语言 & C\# \\
+图形界面框架 & Windows Forms \\
+运行框架 & .NET Framework \\
+主要命名空间 & \texttt{System.Net}、\texttt{System.Net.Sockets}、\texttt{System.Threading}、\texttt{System.Windows.Forms} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{实验设计思路}
+
+本节是本实验的重点。整个程序采用“辅助服务端 + 图形化扫描客户端”的结构：先用 \texttt{RadiusMockServer} 在本机模拟 Radius 端口服务，再用 \texttt{PortScannerGUI} 对这些端口进行扫描。这样做的好处是实验环境可控，端口开放状态明确，便于验证扫描器是否正确。
+
+\subsection{总体架构设计}
+
+程序总体架构如图 \ref{fig:overall_arch} 所示。
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    >=Latex,
+    node distance=0.75cm,
+    box/.style={
+        draw,
+        rounded corners=3pt,
+        align=center,
+        text width=0.78\textwidth,
+        minimum height=0.85cm,
+        font=\small
+    },
+    arrow/.style={->, thick}
+]
+    \node[box] (ui) {
+        \textbf{PortScannerGUI 图形化界面}\\
+        用户输入目标主机、端口范围、线程数、超时时间和扫描协议
+    };
+
+    \node[box, below=of ui] (btn) {
+        \textbf{BtnStart\_Click()}\\
+        读取界面参数，检查输入是否合法，清空旧结果，准备开始扫描
+    };
+
+    \node[box, below=of btn] (queue) {
+        \textbf{端口任务队列 ConcurrentQueue}\\
+        将待扫描端口加入线程安全队列，例如本实验加入 1812 和 1813
+    };
+
+    \node[box, below=of queue] (workers) {
+        \textbf{启动 2--3 个扫描线程}\\
+        创建 ScanWorker-1、ScanWorker-2、ScanWorker-3，并发从队列中取端口
+    };
+
+    \node[box, below=of workers] (scan) {
+        \textbf{执行端口扫描}\\
+        TCP 使用 connect 判断端口是否开放；UDP 发送 RADIUS-PROBE 并等待响应
+    };
+
+    \node[box, below=of scan] (server) {
+        \textbf{RadiusMockServer 模拟服务端}\\
+        在本机监听 TCP/UDP 1812 和 1813，收到连接或探测包后返回结果
+    };
+
+    \node[box, below=of server] (result) {
+        \textbf{AddResult() 更新结果}\\
+        将主机、端口、协议、状态、耗时和线程名显示到 ListView，并写入运行日志
+    };
+
+    \draw[arrow] (ui) -- (btn);
+    \draw[arrow] (btn) -- (queue);
+    \draw[arrow] (queue) -- (workers);
+    \draw[arrow] (workers) -- (scan);
+    \draw[arrow] (scan) -- (server);
+    \draw[arrow] (server) -- (result);
+
+\end{tikzpicture}
+\caption{程序总体架构设计}
+\label{fig:overall_arch}
+\end{figure}
+
+
+整个流程可以概括为：
+
+\begin{enumerate}[itemsep=2pt]
+    \item 用户在图形界面输入目标主机、端口范围、线程数、超时时间和协议类型。
+    \item 点击“开始扫描”后，程序将端口范围中的每个端口加入线程安全队列。
+    \item 程序创建 2--3 个工作线程，每个线程循环从队列中取出端口。
+    \item 工作线程根据协议选项执行 TCP 扫描、UDP 扫描或 TCP+UDP 扫描。
+    \item 每次扫描完成后，程序将结果封装为 \texttt{ScanResult} 对象。
+    \item UI 线程将扫描结果添加到 \texttt{ListView} 中，并更新进度条和日志。
+\end{enumerate}
+
+\subsection{图形界面设计}
+
+图形界面由 \texttt{MainForm} 类实现。程序没有使用拖拽式界面设计器，而是在 \texttt{BuildUi()} 方法中通过代码创建控件。主要控件如表 \ref{tab:ui_controls} 所示。
+
+\begin{table}[H]
+\centering
+\caption{主要界面控件设计}
+\label{tab:ui_controls}
+\begin{tabularx}{0.96\textwidth}{C{3.2cm}C{3.4cm}Y}
+\toprule
+控件变量 & 控件类型 & 功能 \\
+\midrule
+\texttt{txtHost} & \texttt{TextBox} & 输入目标主机或 IP 地址，默认值为 \texttt{127.0.0.1}。 \\
+\texttt{nudStartPort} & \texttt{NumericUpDown} & 输入起始端口，默认设置为 1812。 \\
+\texttt{nudEndPort} & \texttt{NumericUpDown} & 输入结束端口，默认设置为 1813。 \\
+\texttt{nudThreadCount} & \texttt{NumericUpDown} & 输入扫描线程数，最小值为 2，最大值为 3，满足题目要求。 \\
+\texttt{cboProtocol} & \texttt{ComboBox} & 选择 TCP、UDP 或 TCP+UDP。 \\
+\texttt{btnStart} & \texttt{Button} & 开始扫描。 \\
+\texttt{lvResults} & \texttt{ListView} & 显示端口、协议、状态、耗时和线程名等扫描结果。 \\
+\texttt{txtLog} & \texttt{TextBox} & 显示运行日志。 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+其中，线程数控件被限制为：
+
+\begin{lstlisting}[language=C]
+nudThreadCount.Minimum = 2;
+nudThreadCount.Maximum = 3;
+nudThreadCount.Value = 3;
+\end{lstlisting}
+
+这样可以从界面层面保证程序符合“多线程 2--3 线程”的实验要求。
+
+\subsection{Radius 端口一键设置设计}
+
+为了贴合题目要求，界面中加入“Radius 1812/1813”按钮。用户点击后，程序自动设置实验所需参数：
+
+\begin{lstlisting}[language=C]
+nudStartPort.Value = 1812;
+nudEndPort.Value = 1813;
+nudThreadCount.Value = 3;
+cboProtocol.SelectedIndex = 2; // TCP+UDP
+\end{lstlisting}
+
+该按钮的设计意义是减少手动输入错误，保证实验测试目标明确，即扫描 Radius 1812 和 1813 端口。
+
+\subsection{扫描任务队列设计}
+
+当用户点击“开始扫描”后，程序会读取起始端口和结束端口，并将端口逐个加入 \texttt{ConcurrentQueue<int>} 队列。例如本实验端口范围为 1812--1813，则队列内容为：
+
+\begin{center}
+\texttt{1812}，\texttt{1813}
+\end{center}
+
+使用 \texttt{ConcurrentQueue<int>} 的原因是多个线程会同时访问该队列。普通队列在多线程环境下可能出现数据竞争，而 \texttt{ConcurrentQueue} 是线程安全集合，可以保证多个线程同时取任务时不会破坏队列状态。
+
+核心逻辑如下：
+
+\begin{lstlisting}[language=C]
+portQueue = new ConcurrentQueue<int>();
+for (int port = startPort; port <= endPort; port++)
+{
+    portQueue.Enqueue(port);
+}
+\end{lstlisting}
+
+\subsection{工作线程设计}
+
+程序根据用户设置的线程数启动多个扫描线程。每个线程的名字为：
+
+\begin{center}
+\texttt{ScanWorker-1}、\texttt{ScanWorker-2}、\texttt{ScanWorker-3}
+\end{center}
+
+线程启动逻辑如下：
+
+\begin{lstlisting}[language=C]
+for (int i = 1; i <= workerCount; i++)
+{
+    string workerName = "ScanWorker-" + i;
+    Thread worker = new Thread(() => WorkerLoop(workerName, scanCts.Token));
+    worker.IsBackground = true;
+    worker.Name = workerName;
+    worker.Start();
+}
+\end{lstlisting}
+
+每个线程都会进入 \texttt{WorkerLoop()} 方法。在该方法中，线程不断从队列中取出端口。如果队列为空，线程结束；如果用户点击“停止”，线程也会根据取消信号退出。
+
+\subsection{WorkerLoop 扫描流程设计}
+
+\texttt{WorkerLoop()} 是扫描线程真正执行任务的地方。其流程如图 \ref{fig:workerloop} 所示。
+
+\begin{figure}[H]
+\centering
+\resizebox{0.82\textwidth}{!}{
+\begin{tikzpicture}[node distance=1.1cm]
+    \node[wideblock] (start) {线程启动\\进入 \texttt{WorkerLoop()}};
+    \node[decision, below=of start] (queue) {队列中是否还有端口？};
+    \node[wideblock, below left=1.1cm and 1.5cm of queue] (scan) {取出端口\\按协议执行扫描};
+    \node[wideblock, below=of scan] (add) {生成 \texttt{ScanResult}\\更新界面结果};
+    \node[wideblock, below right=1.1cm and 1.5cm of queue] (end) {线程结束\\记录日志};
+
+    \draw[arrow] (start) -- (queue);
+    \draw[arrow] (queue.south west) -- node[left, font=\small]{有} (scan.north);
+    \draw[arrow] (scan) -- (add);
+    \draw[arrow] (add.west) .. controls +(-2.2,0) and +(-2.2,0) .. (queue.west);
+    \draw[arrow] (queue.south east) -- node[right, font=\small]{无} (end.north);
+\end{tikzpicture}
+}
+\caption{\texttt{WorkerLoop()} 工作线程流程}
+\label{fig:workerloop}
+\end{figure}
+
+在 \texttt{WorkerLoop()} 中，如果用户选择 TCP，则调用 \texttt{ScanTcp()}；如果选择 UDP，则调用 \texttt{ScanUdp()}；如果选择 TCP+UDP，则同一个端口会分别执行 TCP 和 UDP 两种扫描。因此本实验扫描两个端口时，最终显示 4 条结果：
+
+\begin{center}
+1812/TCP，1812/UDP，1813/TCP，1813/UDP
+\end{center}
+
+\subsection{TCP 扫描模块设计}
+
+TCP 扫描方法为 \texttt{ScanTcp()}。其核心思想是使用 \texttt{TcpClient} 发起连接，并通过等待连接结果判断端口状态。
+
+关键代码逻辑为：
+
+\begin{lstlisting}[language=C]
+using (TcpClient client = new TcpClient())
+{
+    IAsyncResult ar = client.BeginConnect(host, port, null, null);
+    bool connected = ar.AsyncWaitHandle.WaitOne(timeoutMs);
+
+    if (!connected)
+    {
+        client.Close();
+        return FilteredOrTimeout;
+    }
+
+    client.EndConnect(ar);
+    return Open;
+}
+\end{lstlisting}
+
+设计上使用 \texttt{BeginConnect()} 而不是直接同步连接，是为了能够设置超时时间。如果直接同步连接，当目标端口无响应时，界面可能长时间等待，影响用户体验。
+
+\subsection{UDP 探测模块设计}
+
+UDP 扫描方法为 \texttt{ScanUdp()}。程序使用 \texttt{UdpClient} 连接目标 UDP 端口，发送字符串 \texttt{RADIUS-PROBE}，然后等待响应：
+
+\begin{lstlisting}[language=C]
+byte[] probe = Encoding.ASCII.GetBytes("RADIUS-PROBE");
+udp.Send(probe, probe.Length);
+byte[] reply = udp.Receive(ref remote);
+\end{lstlisting}
+
+如果收到响应，说明目标 UDP 端口有服务回复，判断为 \texttt{Open}。如果等待超时，则返回 \texttt{Open|Filtered}。本实验中，\texttt{RadiusMockServer} 会对 UDP 1812 和 1813 返回 \texttt{RADIUS-MOCK-OK}，因此实验结果中 UDP 端口均显示为 \texttt{Open}。
+
+\subsection{界面更新与线程安全设计}
+
+Windows Forms 程序中，子线程不能直接随意修改 UI 控件，否则可能产生跨线程访问异常。因此程序封装了 \texttt{Ui(Action action)} 方法，用于将界面更新操作切换到 UI 线程执行。
+
+核心思想如下：
+
+\begin{lstlisting}[language=C]
+private void Ui(Action action)
+{
+    if (InvokeRequired)
+        BeginInvoke(action);
+    else
+        action();
+}
+\end{lstlisting}
+
+扫描线程完成任务后，不直接操作 \texttt{ListView}，而是通过 \texttt{AddResult()} 调用 UI 更新逻辑。这样既能保证多线程扫描效率，又能保证界面更新安全。
+
+\subsection{RadiusMockServer 设计}
+
+\texttt{RadiusMockServer} 的作用是为实验提供可控的测试端口。程序启动后创建 4 个监听线程：
+
+\begin{table}[H]
+\centering
+\caption{RadiusMockServer 监听线程}
+\begin{tabularx}{0.82\textwidth}{C{3cm}C{3cm}Y}
+\toprule
+线程名称 & 协议/端口 & 功能 \\
+\midrule
+\texttt{TCP-1812} & TCP 1812 & 接收 TCP 连接并返回测试字符串。 \\
+\texttt{TCP-1813} & TCP 1813 & 接收 TCP 连接并返回测试字符串。 \\
+\texttt{UDP-1812} & UDP 1812 & 接收 UDP 探测并返回 \texttt{RADIUS-MOCK-OK 1812}。 \\
+\texttt{UDP-1813} & UDP 1813 & 接收 UDP 探测并返回 \texttt{RADIUS-MOCK-OK 1813}。 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+该程序不是完整的 Radius 协议实现，而是实验辅助程序。其目的在于让 1812 和 1813 端口处于可检测的开放状态，从而验证扫描器的端口判断逻辑。
+
+\section{实验步骤}
+
+\subsection{打开项目并生成解决方案}
+
+\begin{enumerate}[itemsep=2pt]
+    \item 使用 Visual Studio 2026 打开 \texttt{PortScannerLab.sln}。
+    \item 确认解决方案中包含 \texttt{PortScannerGUI} 与 \texttt{RadiusMockServer} 两个项目。
+    \item 点击“生成”菜单中的“生成解决方案”。
+    \item 确认项目生成成功，没有编译错误。
+\end{enumerate}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{0.png}
+    \caption{Visual Studio 打开项目并配置}
+    \label{fig:scan_flow}
+\end{figure}
+
+
+
+\subsection{启动 RadiusMockServer}
+
+\begin{enumerate}[itemsep=2pt]
+    \item 右键 \texttt{RadiusMockServer} 项目，选择“设为启动项目”。
+    \item 按 \texttt{Ctrl + F5} 运行程序。
+    \item 观察控制台窗口，确认 TCP/UDP 1812 和 1813 均处于监听状态。
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{1.png}
+    \caption{RadiusMockServer 监听状态}
+    \label{fig:scan_flow}
+\end{figure}
+
+\subsection{启动 PortScannerGUI 并设置参数}
+
+\begin{enumerate}[itemsep=2pt]
+    \item 右键 \texttt{PortScannerGUI} 项目，选择“设为启动项目”。
+    \item 按 \texttt{Ctrl + F5} 运行图形化扫描器。
+    \item 点击“Radius 1812/1813”按钮，自动设置扫描参数。
+    \item 确认目标主机为 \texttt{127.0.0.1}，起始端口为 1812，结束端口为 1813，线程数为 3，协议为 TCP+UDP。
+\end{enumerate}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{2.png}
+    \caption{PortScannerGUI 界面}
+    \label{fig:scan_flow}
+\end{figure}
+
+
+
+\subsection{执行扫描并记录结果}
+
+\begin{enumerate}[itemsep=2pt]
+    \item 点击“开始扫描”按钮。
+    \item 等待进度条达到 100\%。
+    \item 查看结果列表中 1812 和 1813 端口的 TCP/UDP 状态。
+    \item 截图保存扫描结果。
+    \item 可选：点击“导出 CSV”按钮，将扫描结果保存为 CSV 文件。
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{3.png}
+    \caption{扫描结果显示}
+    \label{fig:scan_flow}
+\end{figure}
+
+
+\section{实验数据及结果分析}
+
+\subsection{实验输入参数}
+
+本次实验设置的扫描参数如表 \ref{tab:input_params} 所示。
+
+\begin{table}[H]
+\centering
+\caption{扫描输入参数}
+\label{tab:input_params}
+\begin{tabularx}{0.72\textwidth}{C{3cm}Y}
+\toprule
+参数 & 设置值 \\
+\midrule
+目标主机/IP & \texttt{127.0.0.1} \\
+起始端口 & 1812 \\
+结束端口 & 1813 \\
+线程数 & 3 \\
+超时时间 & 1000 ms \\
+扫描协议 & TCP+UDP \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{扫描结果}
+
+实验扫描结果如表 \ref{tab:scan_result} 所示。
+
+\begin{table}[H]
+\centering
+\caption{Radius 1812/1813 扫描结果}
+\label{tab:scan_result}
+\small
+\begin{tabularx}{0.98\textwidth}{C{0.9cm}C{2.1cm}C{1.2cm}C{1.3cm}C{1.4cm}Y}
+\toprule
+序号 & 主机 & 端口 & 协议 & 状态 & 说明 \\
+\midrule
+1 & 127.0.0.1 & 1812 & TCP & Open & connect 连接成功，TCP 端口开放 \\
+2 & 127.0.0.1 & 1813 & TCP & Open & connect 连接成功，TCP 端口开放 \\
+3 & 127.0.0.1 & 1812 & UDP & Open & 收到 UDP 响应：RADIUS-MOCK-OK 1812 \\
+4 & 127.0.0.1 & 1813 & UDP & Open & 收到 UDP 响应：RADIUS-MOCK-OK 1813 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{结果分析}
+
+从 TCP 扫描结果看，1812 和 1813 端口均显示为 \texttt{Open}，说明 \texttt{RadiusMockServer} 的 TCP 监听线程已经成功启动。扫描器使用 TCP connect 方法对目标端口发起连接，连接成功后判断端口开放，因此 TCP 1812 和 TCP 1813 的结果正确。
+
+从 UDP 扫描结果看，1812 和 1813 端口也均显示为 \texttt{Open}。说明栏显示扫描器收到了 \texttt{RADIUS-MOCK-OK 1812} 与 \texttt{RADIUS-MOCK-OK 1813}，说明 UDP 探测数据成功到达模拟服务端，并且服务端成功返回响应。因此 UDP 1812 和 UDP 1813 的结果也正确。
+
+本次实验中，端口范围为 1812--1813，共 2 个端口。由于协议选择为 TCP+UDP，所以每个端口会分别进行 TCP 扫描和 UDP 探测，最终得到 4 条结果。界面进度条显示 2/2，是因为进度按端口数量统计，而不是按协议探测次数统计，因此该显示是合理的。
+
+从多线程角度看，程序启动了 3 个扫描线程。由于本次只扫描两个端口，实际拿到端口任务的主要是其中两个线程，另一个线程可能启动后发现任务队列已空而结束。这并不影响多线程设计的正确性。如果将扫描范围扩大到 1811--1813 或更大范围，可以更明显地观察到三个线程共同参与扫描。
+
+
+
+
+
+\section{实验补充与拓展*}
+
+
+在完成课程实验要求的基础上，我对本端口扫描程序进行了进一步扩展。
+
+将该项目扩展为一个面向 Windows 桌面环境的轻量级端口扫描工具。
+程序在保留原实验要求的图形界面、
+多线程扫描、TCP/UDP 探测以及 Radius 1812/1813 端口测试功能的基础上，
+进一步增加了端口知识库、扫描场景预设、结果过滤、CSV 导出、Markdown 摘要复制等功能，
+使实验程序具有更好的实用性和可展示性。
+\subsection{扩展后的程序结构}
+
+扩展后的项目结构更加清晰，主要分为图形界面、扫描核心、结果模型、服务知识库、导出模块和 Radius 模拟服务几个部分。其结构如下：
+
+从结构上看，扩展后的程序将界面逻辑和扫描核心逻辑进行了分离。这样做的好处是后续可以在不大幅修改扫描核心的情况下，继续增加命令行版本、单元测试、JSON 导出、资产基线对比等功能。
+
+
+
+
+\begin{figure}[H]
+\centering
+\resizebox{0.98\textwidth}{!}{
+\begin{tikzpicture}[
+    font=\small,
+    node distance=1.1cm and 1.5cm,
+    module/.style={
+        rectangle,
+        rounded corners,
+        draw=black,
+        thick,
+        align=center,
+        minimum width=3.2cm,
+        minimum height=0.9cm,
+        fill=gray!10
+    },
+    file/.style={
+        rectangle,
+        rounded corners,
+        draw=black,
+        align=center,
+        minimum width=3.1cm,
+        minimum height=0.8cm,
+        fill=white
+    },
+    data/.style={
+        rectangle,
+        draw=black,
+        dashed,
+        align=center,
+        minimum width=3.1cm,
+        minimum height=0.8cm,
+        fill=gray!5
+    },
+    arrow/.style={
+        -{Latex[length=2.2mm]},
+        thick
+    }
+]
+
+% ===================== Top =====================
+\node[module] (user) {用户 / 实验者};
+
+% ===================== GUI Project =====================
+\node[module, below=of user] (gui) {PortScannerGUI\\Windows Forms 图形界面};
+
+\node[file, below left=of gui] (program) {Program.cs\\程序入口};
+\node[file, below=of gui] (mainform) {MainForm.cs\\界面构建与事件处理};
+\node[file, below right=of gui] (appconfig) {App.config / AssemblyInfo.cs\\程序配置与程序集信息};
+
+% ===================== UI Functions =====================
+\node[file, below left=1.1cm and 0.5cm of mainform] (input) {扫描参数输入\\主机 / 端口 / 协议 / 并发数 / 超时};
+\node[file, below=1.1cm of mainform] (view) {结果展示\\ListView / 进度条 / 日志};
+\node[file, below right=1.1cm and 0.5cm of mainform] (profile) {扫描场景与过滤\\Radius / Web / 数据库 / 远程管理};
+
+% ===================== Scanning Layer =====================
+\node[module, below=1.4cm of view] (scanning) {Scanning 模块\\扫描核心与数据模型};
+
+\node[data, below left=of scanning] (request) {ScanRequest.cs\\参数校验与端口表达式解析};
+\node[module, below=of scanning] (service) {PortScannerService.cs\\并发 TCP/UDP 扫描核心};
+\node[data, below right=of scanning] (mode) {ScanMode.cs\\TCP / UDP / TCP+UDP};
+
+% ===================== Core Details =====================
+\node[file, below left=of service] (tcp) {TCP Connect 扫描\\Open / Closed / Timeout};
+\node[file, below=of service] (udp) {UDP 探测\\Open / Closed / Open|Filtered};
+\node[file, below right=of service] (progress) {ScanProgress.cs\\扫描进度回传};
+
+% ===================== Result Layer =====================
+\node[data, right=2.0cm of service] (result) {ScanResult.cs\\扫描结果模型};
+\node[data, above=of result] (summary) {ScanSummary.cs\\扫描汇总信息};
+\node[module, below=of result] (catalog) {ServiceCatalog.cs\\常见端口知识库};
+\node[data, below=of catalog] (known) {KnownPortInfo.cs\\服务名 / 分类 / 风险 / 建议};
+
+% ===================== Export =====================
+\node[module, right=2.0cm of result] (export) {CsvExporter.cs\\CSV 结果导出};
+
+% ===================== Radius Server =====================
+\node[module, below=2.1cm of udp] (radius) {RadiusMockServer\\Radius 测试服务器};
+\node[file, below=of radius] (radiusprogram) {Program.cs\\监听 TCP/UDP 1812、1813};
+
+% ===================== Docs / CI =====================
+\node[module, right=2.1cm of export] (docs) {项目文档与工程文件};
+\node[file, above=of docs] (readme) {README.md\\项目说明与运行方式};
+\node[file, right=of docs] (ci) {.github/workflows/build.yml\\GitHub Actions 构建};
+\node[file, below=of docs] (positioning) {docs/PRODUCT\_POSITIONING.md\\产品定位说明};
+
+% ===================== Arrows =====================
+\draw[arrow] (user) -- (gui);
+\draw[arrow] (program) -- (gui);
+\draw[arrow] (gui) -- (mainform);
+\draw[arrow] (mainform) -- (input);
+\draw[arrow] (mainform) -- (view);
+\draw[arrow] (mainform) -- (profile);
+
+\draw[arrow] (input) -- (request);
+\draw[arrow] (profile) -- (request);
+\draw[arrow] (request) -- (service);
+\draw[arrow] (mode) -- (service);
+
+\draw[arrow] (service) -- (tcp);
+\draw[arrow] (service) -- (udp);
+\draw[arrow] (service) -- (progress);
+
+\draw[arrow] (tcp.east) -- ++(0.7,0) |- (result.west);
+\draw[arrow] (udp.east) -- ++(0.7,0) |- (result.west);
+\draw[arrow] (progress.east) -- ++(0.7,0) |- (view.east);
+
+\draw[arrow] (catalog) -- (known);
+\draw[arrow] (known.east) -- ++(0.6,0) |- (result.south);
+\draw[arrow] (result) -- (summary);
+\draw[arrow] (result) -- (export);
+\draw[arrow] (export.west) -- ++(-0.8,0) |- (view.east);
+
+\draw[arrow] (radiusprogram) -- (radius);
+\draw[arrow] (radius) -- (udp);
+\draw[arrow] (radius) -- (tcp);
+
+\draw[arrow] (readme) -- (docs);
+\draw[arrow] (positioning) -- (docs);
+\draw[arrow] (ci) -- (docs);
+
+% ===================== Background Groups =====================
+\begin{scope}[on background layer]
+\node[
+    draw=black!45,
+    rounded corners,
+    dashed,
+    fit=(gui)(program)(mainform)(appconfig)(input)(view)(profile),
+    inner sep=0.35cm,
+    label={[font=\small]above:{PortScannerGUI 图形界面层}}
+] {};
+
+\node[
+    draw=black!45,
+    rounded corners,
+    dashed,
+    fit=(scanning)(request)(service)(mode)(tcp)(udp)(progress)(result)(summary)(catalog)(known)(export),
+    inner sep=0.35cm,
+    label={[font=\small]above:{Scanning 扫描与结果处理层}}
+] {};
+
+\node[
+    draw=black!45,
+    rounded corners,
+    dashed,
+    fit=(radius)(radiusprogram),
+    inner sep=0.35cm,
+    label={[font=\small]below:{RadiusMockServer 实验测试环境}}
+] {};
+
+\node[
+    draw=black!45,
+    rounded corners,
+    dashed,
+    fit=(docs)(readme)(ci)(positioning),
+    inner sep=0.35cm,
+    label={[font=\small]above:{文档与持续集成}}
+] {};
+\end{scope}
+
+\end{tikzpicture}
+}
+\caption{PortScannerLab 的程序结构图}
+\label{fig:current_github_architecture}
+\end{figure}
+
+
+
+
+\subsection{灵活端口表达式输入扩展}
+
+在原始实验设计中，端口扫描通常采用“起始端口”和“结束端口”的方式进行输入，这种方式适合连续端口范围扫描，但在实际使用中不够灵活。例如，用户有时只希望扫描 Radius 实验端口 \texttt{1812-1813}，有时又希望同时检查多个远程管理相关端口，如 \texttt{22,23,135,139,445,3389,5900,5985,5986}。如果仍然采用单一起止端口的输入方式，就会扫描大量无关端口，影响实验效率。
+
+因此，在扩展版本中，我将端口输入方式改为端口表达式输入。用户既可以输入连续端口范围，也可以输入多个离散端口，甚至可以将两种方式组合使用。例如：
+
+\begin{center}
+\texttt{1812-1813}
+\end{center}
+
+表示扫描 1812 到 1813 之间的连续端口；而：
+
+\begin{center}
+\texttt{22,23,135,139,445,3389,5900,5985,5986}
+\end{center}
+
+则表示扫描多个不连续的指定端口。
+
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.55\textwidth}
+    \centering
+    \includegraphics[width=0.82\linewidth]{4.png}
+    \caption*{(a) 连续端口范围输入示例：\texttt{1812-1813}}
+    
+    \vspace{0.4cm}
+    
+    \includegraphics[width=0.82\linewidth]{5.png}
+    \caption*{(b) 离散端口集合输入示例}
+\end{minipage}
+\caption{扩展后的端口表达式输入方式}
+\label{fig:port_expression_input}
+\end{figure}
+
+这种设计使程序比原实验中的端口范围输入更加灵活。一方面，它可以继续满足 Radius 实验中对 \texttt{1812} 和 \texttt{1813} 端口的连续范围扫描；另一方面，也可以用于实际场景中的重点端口检查，例如远程管理端口、Web 服务端口、数据库端口等。这样既减少了无意义端口扫描，又提升了程序在真实排查场景中的实用性。
+
+
+\subsection{常见端口知识库扩展与扫描场景预设}
+
+为了减少用户手动输入端口的工作量，扩展版本中加入了扫描场景预设。用户可以在界面中直接选择课程/Radius 实验、运维常用暴露面、Web/开发服务、数据库与缓存、远程管理等场景，程序会自动填入对应的常见端口集合。
+
+在代码实现上，场景下拉框由 \texttt{MainForm.cs} 中的 \texttt{cboProfile} 控件实现，不同场景会对应不同的端口表达式。例如选择“远程管理”后，程序会自动填入 \texttt{22,23,135,139,445,3389,5900,5985,5986}。这些端口覆盖了 SSH、Telnet、SMB、RDP、VNC、WinRM 等常见远程管理服务。
+
+同时，程序还在 \texttt{ServiceCatalog.cs} 中维护了常见端口知识库，用于记录端口号、协议、服务名称、风险等级和安全建议。扫描完成后，程序会根据端口号和协议匹配对应的服务信息，使扫描结果更容易理解。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.38\textwidth]{6.png}
+\caption{扫描场景预设}
+\label{fig:scan_profile_preset}
+\end{figure}
+
+
+
+\subsection{扫描结果展示改进}
+
+扩展版本对扫描结果表格进行了改进。原始端口扫描程序通常只显示端口是否开放，而本程序在结果中增加了服务名称、风险等级、说明和安全建议等字段。这样用户不仅可以知道某个端口的状态，还可以进一步理解该端口可能对应的服务以及是否存在安全风险。
+
+在代码实现上，每条扫描结果由 \texttt{ScanResult.cs} 表示，其中包含主机、端口、协议、状态、服务名称、风险等级、说明、建议、耗时和工作器等信息。扫描过程中，\texttt{PortScannerService.cs} 会完成 TCP 或 UDP 探测，并结合 \texttt{ServiceCatalog.cs} 生成更完整的结果信息。最后，\texttt{MainForm.cs} 将这些字段显示到结果表格中。
+
+例如，在远程管理场景下，程序可以识别出 \texttt{135} 端口为 MS RPC、\texttt{445} 端口为 SMB、\texttt{3389} 端口为 RDP，并给出 High 或 Critical 等风险提示。相比只显示 \texttt{Open} 或 \texttt{Closed}，这种展示方式更适合后续分析和写入实验报告。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.96\textwidth]{7.png}
+\caption{改进后的扫描结果展示}
+\label{fig:improved_scan_result}
+\end{figure}
+
+
+
+
+
+
+
+\subsection{并发扫描数量设置}
+
+扩展版本中加入了并发扫描数量设置，用户可以在界面中手动调整扫描并发数。该参数用于控制同时执行端口探测任务的工作线程数量，从而提高多端口扫描时的效率。
+
+在代码实现上，\texttt{ScanRequest.cs} 中定义并发数范围为 \texttt{1-256}，界面中的并发数控件也使用该范围作为限制。因此，程序允许用户根据实验环境和目标端口数量灵活调整并发数。图中设置的并发数为 \texttt{32}，这是一个较为折中的默认值，既能提高扫描速度，又不会对本机或目标主机造成过大压力。
+
+同时，程序在实际扫描时会根据端口数量自动限制工作线程数量，即实际并发数不会超过待扫描端口总数。这样可以避免在端口数量较少时创建过多无意义的扫描任务。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.28\textwidth]{8.png}
+\caption{并发扫描数量设置}
+\label{fig:worker_count_setting}
+\end{figure}
+
+
+
+\subsection{扫描结果过滤功能}
+
+为了便于在大量扫描结果中快速定位重点端口，扩展版本中加入了结果过滤功能。用户可以通过界面中的下拉框选择不同的显示范围，包括全部结果、开放/不确定端口、Critical/High 高风险端口、仅开放端口和仅关闭端口。
+
+在代码实现上，该功能由 \texttt{MainForm.cs} 中的 \texttt{cboResultFilter} 控件实现。当用户切换过滤条件时，程序会重新刷新结果列表，并通过 \texttt{IsResultVisible()} 方法判断每一条扫描结果是否应该显示。例如，“Critical/High” 选项只显示高风险端口，“仅开放”选项只显示状态为 \texttt{Open} 的端口。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.36\textwidth]{9.png}
+\caption{扫描结果过滤功能}
+\label{fig:result_filter}
+\end{figure}
+
+该功能可以减少无关结果对分析过程的干扰，使用户能够更快关注开放端口和高风险端口，提高实验结果分析效率。
+
+
+
+
+
+
+
+\section{实验结论、心得体会和改进建议}
+
+\subsection{实验结论}
+
+本次实验完成了一个基于 C\# Windows Forms 的图形化端口扫描工具。程序能够对指定主机和端口进行 TCP/UDP 扫描，并通过多线程方式提高扫描效率。在基础实验要求中，程序可以对 Radius 常用端口 \texttt{1812} 和 \texttt{1813} 进行检测，并配合 \texttt{RadiusMockServer} 完成本机实验环境验证。
+
+在实验扩展部分，程序不再局限于简单的端口开放检测，而是进一步加入了端口表达式输入、扫描场景预设、常见端口知识库、风险等级提示、结果过滤、CSV 导出和 Markdown 摘要复制等功能。通过这些扩展，程序能够根据不同应用场景快速填入常见端口，并在扫描结果中显示服务名称、风险等级和安全建议，使扫描结果更加直观、易理解，也更适合写入实验报告。
+
+实验结果表明，该程序能够完成基本端口扫描任务，并且能够较好地区分 \texttt{Open}、\texttt{Closed}、\texttt{Filtered/Timeout} 和 \texttt{Open|Filtered} 等状态。相比原始的端口扫描实验，扩展后的程序在可用性、可解释性和结果整理方面都有明显提升。
+
+\subsection{心得体会}
+
+通过本次实验，我对端口扫描的基本原理有了更深入的理解。TCP 扫描可以通过建立连接来判断端口是否开放，而 UDP 扫描由于协议本身不保证响应，因此扫描结果具有一定不确定性。例如，当 UDP 端口没有返回数据时，并不能简单判断端口一定关闭，因此程序中使用 \texttt{Open|Filtered} 表示开放或被过滤的可能状态。这个过程让我认识到，不同协议的扫描方式和结果解释存在明显差异。
+
+在程序设计过程中，我也体会到图形化工具的重点不仅是“能扫描”，还要让用户“看得懂”。因此，我在扩展中加入了常见端口知识库和风险提示功能，使扫描结果不只是显示端口状态，还能说明该端口可能对应的服务及其安全影响。例如，\texttt{445} 端口对应 SMB 服务，\texttt{3389} 端口对应远程桌面服务，这些端口如果暴露在不可信网络中就需要重点关注。
+
+另外，通过实现端口表达式解析、扫描场景预设和结果过滤功能，我认识到一个实验程序也可以向实用工具方向改进。相比命令行工具，图形化界面更适合课堂演示和实验报告截图；相比只输出原始结果的扫描器，本程序更强调结果解释和报告整理，这也是本次扩展中比较有特色的地方。
+
+\subsection{改进建议}
+
+虽然本程序已经完成了基础扫描和部分扩展功能，但仍然存在一些可以继续改进的地方。
+
+首先，目前程序主要支持单个目标主机扫描，后续可以增加多主机或网段扫描功能。例如支持输入多个 IP 地址，或者支持简单的局域网网段扫描，使程序能够用于更完整的网络资产检查。
+
+其次，当前的服务识别主要依赖端口号和少量 TCP Banner 信息，准确性仍然有限。后续可以继续完善服务识别逻辑，例如针对 HTTP、SSH、FTP、SMTP 等常见协议设计更细致的低扰动探测方式，从而提高服务判断的准确性。
+
+第三，当前扫描结果已经支持 CSV 导出和 Markdown 摘要复制，但还可以进一步扩展为 HTML 报告或 LaTeX 表格导出。这样可以更方便地将扫描结果直接放入实验报告中，提高报告整理效率。
+
+第四，界面还可以继续优化。例如可以增加更明显的风险统计区域，显示开放端口数量、高风险端口数量、不确定 UDP 端口数量等信息，使用户在扫描完成后能够快速了解整体风险情况。
+
+最后，程序后续可以加入更严格的使用提示和扫描范围确认机制。端口扫描在真实网络中可能触发安全告警，因此工具应继续强调仅在本人主机、实验环境或已获得授权的网络中使用，避免不当扫描行为。
+
+
+\newpage
+\appendix
+\section{附录：主要源码（非拓展，实验要求部分）}
+
+\subsection{PortScannerGUI/MainForm.cs}
+
+\VerbatimInput[
+    fontsize=\small,
+    frame=single,
+    breaklines=true
+]{src/MainForm.cs}
+
+\subsection{PortScannerGUI/Program.cs}
+
+\VerbatimInput[
+    fontsize=\small,
+    frame=single,
+    breaklines=true
+]{src/PortScannerGUI_Program.cs}
+
+\subsection{RadiusMockServer/Program.cs}
+
+\VerbatimInput[
+    fontsize=\small,
+    frame=single,
+    breaklines=true
+]{src/RadiusMockServer_Program.cs}
+
+
+\end{document}
