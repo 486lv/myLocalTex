@@ -1,0 +1,47 @@
+\relax 
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces PE 文件结构与加载过程示意图}}{2}{}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:pe-load-principle}{{1}{2}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces 尾区段空洞寄生的字段修改逻辑}}{3}{}\protected@file@percent }
+\newlabel{fig:tail-infection-principle}{{2}{3}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.1}实验一：PE文件入口点修改}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.1}原始入口点定位}{3}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces 使用 PEView 查看 Control.exe 的原始入口点字段}}{4}{}\protected@file@percent }
+\newlabel{fig:exp3-origin-entry}{{3}{4}{原始入口点定位}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.2}入口点 RVA 到文件偏移的转换}{4}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces 使用 PEView 查看 .text 节表字段}}{5}{}\protected@file@percent }
+\newlabel{fig:exp3-text-section}{{4}{5}{入口点 RVA 到文件偏移的转换}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces 使用 ImHex 定位入口点对应的文件偏移 0x0804}}{6}{}\protected@file@percent }
+\newlabel{fig:exp3-imhex-entry}{{5}{6}{入口点 RVA 到文件偏移的转换}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.3}入口点字段修改}{6}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces 使用 ImHex 将入口点字段修改为 0x1419}}{7}{}\protected@file@percent }
+\newlabel{fig:exp3-imhex-modify}{{6}{7}{入口点字段修改}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.4}修改结果验证}{7}{}\protected@file@percent }
+\newlabel{fig:exp3-peview-modified}{{7a}{8}{修改结果验证}{}{}}
+\newlabel{sub@fig:exp3-peview-modified}{{a}{8}{修改结果验证}{}{}}
+\newlabel{fig:exp3-x32dbg-modified}{{7b}{8}{修改结果验证}{}{}}
+\newlabel{sub@fig:exp3-x32dbg-modified}{{b}{8}{修改结果验证}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces 入口点字段修改后的静态与动态验证结果}}{8}{}\protected@file@percent }
+\newlabel{fig:exp3-verify-combined}{{7}{8}{修改结果验证}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.2}实验二：PE文件尾区段寄生实验}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.1}最后一个节空洞判断}{8}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces PEView 查看最后一个节 .reloc 的节表字段}}{8}{}\protected@file@percent }
+\newlabel{fig:exp3-reloc-origin}{{8}{8}{最后一个节空洞判断}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.2}寄生位置计算}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.3}寄生代码写入与相关字段修改}{9}{}\protected@file@percent }
+\newlabel{fig:exp3-tail-code-write}{{9a}{10}{寄生代码写入与相关字段修改}{}{}}
+\newlabel{sub@fig:exp3-tail-code-write}{{a}{10}{寄生代码写入与相关字段修改}{}{}}
+\newlabel{fig:exp3-tail-vsize-modify}{{9b}{10}{寄生代码写入与相关字段修改}{}{}}
+\newlabel{sub@fig:exp3-tail-vsize-modify}{{b}{10}{寄生代码写入与相关字段修改}{}{}}
+\newlabel{fig:exp3-tail-entry-modify}{{9c}{10}{寄生代码写入与相关字段修改}{}{}}
+\newlabel{sub@fig:exp3-tail-entry-modify}{{c}{10}{寄生代码写入与相关字段修改}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces 尾区段寄生实验中的三处关键修改}}{10}{}\protected@file@percent }
+\newlabel{fig:exp3-tail-three-modify}{{9}{10}{寄生代码写入与相关字段修改}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.4}寄生结果验证}{11}{}\protected@file@percent }
+\newlabel{fig:exp3-tail-peview-entry}{{10a}{11}{寄生结果验证}{}{}}
+\newlabel{sub@fig:exp3-tail-peview-entry}{{a}{11}{寄生结果验证}{}{}}
+\newlabel{fig:exp3-tail-x32dbg-entry}{{10b}{11}{寄生结果验证}{}{}}
+\newlabel{sub@fig:exp3-tail-x32dbg-entry}{{b}{11}{寄生结果验证}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces 尾区段寄生代码的静态与动态验证结果}}{11}{}\protected@file@percent }
+\newlabel{fig:exp3-tail-verify}{{10}{11}{寄生结果验证}{}{}}
+\gdef \@abspage@last{13}
