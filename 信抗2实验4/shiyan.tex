@@ -1,0 +1,639 @@
+﻿\documentclass[12pt]{ctexart}
+
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{indentfirst}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{placeins}
+
+\usetikzlibrary{arrows.meta,positioning,calc}
+
+\setlength{\parindent}{2em}
+\setstretch{1.35}
+\captionsetup{font=small}
+
+\setcounter{secnumdepth}{3}
+
+\titleformat{\section}
+{\bfseries\zihao{4}}
+{\thesection}
+{0.8em}
+{}
+
+\titleformat{\subsection}
+{\bfseries\zihao{-4}}
+{\thesubsection}
+{0.8em}
+{}
+
+\titleformat{\subsubsection}
+{\bfseries\normalsize}
+{\thesubsubsection}
+{0.8em}
+{}
+
+\renewcommand{\figurename}{图}
+\captionsetup[figure]{font=small,labelsep=space}
+
+% 单图
+\newcommand{\imgsingle}[4][0.75\textwidth]{
+\begin{figure}[H]
+\centering
+\includegraphics[width=#1]{#2}
+\caption{#3}
+\label{#4}
+\end{figure}
+}
+
+% 两图横向合并
+\newcommand{\imgtwo}[9][0.48\textwidth]{
+\begin{figure}[H]
+\centering
+\begin{subfigure}[t]{#1}
+\centering
+\includegraphics[width=\linewidth]{#2}
+\caption{#3}
+\label{#4}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{#1}
+\centering
+\includegraphics[width=\linewidth]{#5}
+\caption{#6}
+\label{#7}
+\end{subfigure}
+\caption{#8}
+\label{#9}
+\end{figure}
+}
+
+\begin{document}
+
+\thispagestyle{empty}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.70\textwidth]{img/0.png}
+\end{figure}
+
+\vspace{2cm}
+
+\noindent
+\hspace{1.5em}学生姓名\textbf{：}吕乐彬
+\hfill
+学号\textbf{：}2023080904007
+\hfill
+指导教师\textbf{：}李忻洋
+
+\vspace{2cm}
+
+\noindent {\heiti\zihao{3} 一、实验项目名称：}
+实验3-3：寄生到非代码区段末尾并跳回原入口点；实验3-4：尾区段寄生之扩展区段大小
+
+\vspace{0.8cm}
+
+\noindent {\heiti\zihao{3} 二、实验目的：}
+
+本组实验围绕 PE 文件代码寄生、入口点重定向、节属性修改和尾区段扩展展开。通过实验3-3，掌握将寄生代码写入非代码区段末尾的方法，理解非代码节默认不具备执行权限时会导致访问异常的原因，并能够通过修改节 \texttt{Characteristics} 字段为目标节增加可执行权限；同时掌握在寄生代码后添加 \texttt{JMP} 指令跳回原入口点的方法，使程序在执行寄生代码后仍能恢复原有执行流程。
+
+通过实验3-4，进一步理解当尾区段原有空洞不足以容纳寄生代码时，为什么需要扩展最后一个节的文件大小；掌握 \texttt{VirtualSize}、\texttt{SizeOfRawData}、\texttt{PointerToRawData}、\texttt{FileAlignment}、\texttt{SectionAlignment} 和 \texttt{AddressOfEntryPoint} 等字段之间的关系；能够完成文件扩展、节大小字段修正、入口点修改、节属性修改和动态调试验证，形成从“结构分析”到“控制流验证”的完整实验闭环。
+
+\vspace{0.8cm}
+\noindent {\heiti\zihao{3} 三、实验原理：}
+
+PE 文件运行时，系统会先解析 DOS 头、PE 头、可选映像头和节表，再根据这些结构把文件内容映射到进程虚拟内存中。可选映像头中的 \texttt{AddressOfEntryPoint} 决定程序装载后的入口 RVA；节表中的 \texttt{RVA}、\texttt{VirtualSize}、\texttt{PointerToRawData}、\texttt{SizeOfRawData} 和 \texttt{Characteristics} 则决定节在文件和内存中的位置、大小与访问权限。因此，PE 寄生实验的关键不是单纯写入机器码，而是让“入口点、节大小、节权限和跳转关系”保持一致，使寄生代码既能被加载，又能被执行，并最终跳回原程序流程。
+
+\vspace{0.4cm}
+
+\noindent\textbf{（1）实验3-3：寄生到非代码区段末尾并跳回原入口点}
+
+实验3-3的核心是将寄生代码写入非代码节末尾的空洞区域，并修改入口点，使程序启动后先执行寄生代码，再通过 \texttt{JMP} 指令跳回原入口点。非代码节如 \texttt{.rdata} 通常只保存只读数据，默认不具备可执行权限。如果只写入机器码并修改入口点，程序可能会因为目标节没有 \texttt{IMAGE\_SCN\_MEM\_EXECUTE} 权限而发生访问异常。因此，本实验除了写入 \texttt{NOP} 和回跳 \texttt{JMP} 外，还需要修改目标节的 \texttt{Characteristics} 字段，使非代码节具备执行权限。
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=0.42cm,
+        every node/.style={font=\small},
+        flow/.style={
+            draw,
+            rounded corners,
+            align=center,
+            text width=0.78\textwidth,
+            minimum height=0.82cm
+        },
+        line/.style={-{Stealth[length=2.3mm]}, thick}
+    ]
+
+    \node[flow] (a) {分析非代码节，如 \texttt{.rdata}，确认节末尾存在可利用空洞};
+    \node[flow, below=of a] (b) {根据 \texttt{VirtualSize}、\texttt{RVA} 和 \texttt{PointerToRawData} 计算寄生代码的文件偏移与 RVA};
+    \node[flow, below=of b] (c) {在寄生位置写入若干 \texttt{NOP}，并添加一条跳回原入口点的相对 \texttt{JMP}};
+    \node[flow, below=of c] (d) {将 \texttt{AddressOfEntryPoint} 修改为寄生代码起始 RVA};
+    \node[flow, below=of d] (e) {修改目标节 \texttt{Characteristics}，增加 \texttt{IMAGE\_SCN\_MEM\_EXECUTE} 权限};
+    \node[flow, below=of e] (f) {动态调试验证：入口点进入寄生代码，执行后成功跳回原入口点};
+
+    \draw[line] (a) -- (b);
+    \draw[line] (b) -- (c);
+    \draw[line] (c) -- (d);
+    \draw[line] (d) -- (e);
+    \draw[line] (e) -- (f);
+
+    \end{tikzpicture}
+    \caption{实验3-3：非代码区段寄生并跳回原入口点的原理流程}
+    \label{fig:principle-exp33}
+\end{figure}
+
+如图~\ref{fig:principle-exp33} 所示，实验3-3的控制链路为“原入口点被重定向到寄生代码，寄生代码执行后再跳回原入口点”。其中，回跳 \texttt{JMP} 采用相对位移寻址，机器码形式为 \texttt{E9 xx xx xx xx}，后 4 字节不是目标地址本身，而是目标 RVA 与 \texttt{JMP} 后下一条指令 RVA 的差值。该实验说明，非代码节寄生必须同时解决两个问题：一是控制流能否跳到寄生位置，二是目标节是否允许执行。
+
+\vspace{0.5cm}
+
+\noindent\textbf{（2）实验3-4：尾区段寄生之扩展区段大小}
+
+实验3-4进一步讨论尾区段空洞不足的情况。若寄生代码长度超过最后一个节原有的对齐空洞，仅在原空洞中写入代码已经不够，必须扩展最后一个节的文件大小。具体做法是在最后节原 \texttt{VirtualSize} 后写入第一条 \texttt{JMP}，使其跳到原 \texttt{SizeOfRawData} 之后的新扩展区域；再在扩展区写入若干 \texttt{NOP} 和一条回跳 \texttt{JMP}。为了使新增内容能够被 PE 加载器识别，还需要同步修改 \texttt{SizeOfRawData}、\texttt{VirtualSize}，必要时检查 \texttt{SizeOfImage}，并补齐新的文件对齐空间。
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=0.42cm,
+        every node/.style={font=\small},
+        flow/.style={
+            draw,
+            rounded corners,
+            align=center,
+            text width=0.78\textwidth,
+            minimum height=0.82cm
+        },
+        line/.style={-{Stealth[length=2.3mm]}, thick}
+    ]
+
+    \node[flow] (a) {分析最后一个节，如 \texttt{.reloc}，记录原 \texttt{VirtualSize}、\texttt{SizeOfRawData} 和 \texttt{PointerToRawData}};
+    \node[flow, below=of a] (b) {在原 \texttt{VirtualSize} 后写入第一条 \texttt{JMP}，跳转到原 \texttt{SizeOfRawData} 之后的扩展区};
+    \node[flow, below=of b] (c) {在扩展区写入若干 \texttt{NOP}，并追加一条跳回原入口点的 \texttt{JMP}};
+    \node[flow, below=of c] (d) {将 \texttt{SizeOfRawData} 增加一个 \texttt{FileAlignment}，并补齐文件对齐空间};
+    \node[flow, below=of d] (e) {修改 \texttt{VirtualSize}，并根据 \texttt{SectionAlignment} 检查 \texttt{SizeOfImage} 是否需要变化};
+    \node[flow, below=of e] (f) {修改 \texttt{AddressOfEntryPoint} 和节权限，动态验证入口点到扩展区再回到原入口点};
+
+    \draw[line] (a) -- (b);
+    \draw[line] (b) -- (c);
+    \draw[line] (c) -- (d);
+    \draw[line] (d) -- (e);
+    \draw[line] (e) -- (f);
+
+    \end{tikzpicture}
+    \caption{实验3-4：尾区段寄生并扩展区段大小的原理流程}
+    \label{fig:principle-exp34}
+\end{figure}
+
+如图~\ref{fig:principle-exp34} 所示，实验3-4的重点是让新增区域从“文件末尾多出来的字节”变成 PE 结构中合法的节内容。\texttt{SizeOfRawData} 决定该节在文件中的对齐后大小，\texttt{VirtualSize} 决定该节在内存中的实际有效范围，\texttt{SizeOfImage} 则描述整个映像装载后的大小。如果这些字段没有同步修改，即使文件末尾已经写入新代码，加载器也可能不会把它作为有效节内容处理。该实验说明，尾区段寄生超过原空洞时，必须同时处理文件扩展、节大小修正、入口点重定向、节权限修改和跳回原入口点等问题，才能形成完整可靠的执行链路。
+
+
+\noindent {\heiti\zihao{3} 四、实验环境（设备、元器件）：}
+
+Windows 11 操作系统；PEView；ImHex；x32dbg；实验样本文件 \texttt{Control.exe} 及其副本文件。
+
+\vspace{0.8cm}
+
+
+\noindent {\color{red}\heiti\zihao{3} 五、实验步骤：}
+
+\vspace{0.3cm}
+
+% 使“实验步骤”下的小节从 1.1 开始编号
+\setcounter{section}{1}
+\setcounter{subsection}{0}
+
+\subsection{寄生到非代码区段末尾并跳回原入口点}
+
+\subsubsection{原始条件分析与寄生思路}
+
+本实验要求将寄生代码写入非代码区段末尾，并在执行完寄生代码后跳回原入口点，使原程序继续正常运行。与前一实验不同，本实验的目标不是单纯“修改程序入口点”，而是构造如下控制流：
+\[
+\text{新入口点} \rightarrow \text{寄生代码} \rightarrow \text{跳回原入口点} \rightarrow \text{原程序继续执行}
+\]
+
+实验中选取的非代码节为 .rdata。首先使用 PEView 查看原始入口点和 .rdata 节表字段。
+
+\imgtwo[0.48\textwidth]
+{img/1.png}{PEView 查看 .rdata 节原始字段}{fig:exp33-rdata-origin}
+{img/2.png}{PEView 查看原始入口点字段}{fig:exp33-entry-origin}
+{原始入口点与 .rdata 节表信息}
+{fig:exp33-origin-info}
+
+如图~\ref{fig:exp33-origin-info} 所示，原始样本的 AddressOfEntryPoint 为 0x1404；.rdata 节的 VirtualSize 为 0x02F6，RVA 为 0x2000，Size of Raw Data 为 0x0400，Pointer to Raw Data 为 0x0A00，Characteristics 为 0x40000040。由于 0x02F6 小于 0x0400，说明 .rdata 节末尾存在空洞，可用于写入寄生代码。
+
+空洞大小计算如下：
+[
+0x0400 - 0x02F6 = 0x010A
+]
+即 .rdata 节中有 0x010A 字节空闲空间。本实验需要写入 7 个 NOP 和 1 条 5 字节 JMP 指令，共 12 字节，因此空间足够。
+
+\subsubsection{寄生位置与跳转位移计算}
+
+寄生代码写入位置位于 \texttt{.rdata} 节已使用区域之后，因此其文件偏移为：
+
+\begin{center}
+\texttt{0x0A00 + 0x02F6 = 0x0CF6}
+\end{center}
+
+对应的寄生代码 RVA 为：
+
+\begin{center}
+\texttt{0x2000 + 0x02F6 = 0x22F6}
+\end{center}
+
+因此，本实验应将入口点字段改为 \texttt{0x22F6}。由于 PE 文件使用小端序存储多字节整数，\texttt{0x000022F6} 在文件中的字节形式为：
+
+\begin{center}
+\texttt{F6 22 00 00}
+\end{center}
+
+根据学号最后一位数字为 7，寄生代码开头写入 7 个 \texttt{NOP} 指令：
+
+\begin{center}
+\texttt{90 90 90 90 90 90 90}
+\end{center}
+
+随后添加一条相对 \texttt{JMP} 指令，使控制流跳回原入口点 \texttt{0x1404}。 \texttt{JMP} 指令开始 RVA 为：
+
+\begin{center}
+\texttt{0x22F6 + 7 = 0x22FD}
+\end{center}
+
+\texttt{JMP} 指令长度为 5 字节，因此 \texttt{JMP} 后下一条指令 RVA 为：
+
+\begin{center}
+\texttt{0x22FD + 5 = 0x2302}
+\end{center}
+
+相对位移为：
+
+\begin{center}
+\texttt{0x1404 - 0x2302 = -0x0EFE}
+\end{center}
+
+写成 32 位补码为：
+
+\begin{center}
+\texttt{0xFFFFF102}
+\end{center}
+
+按小端序写入后，位移字节为：
+
+\begin{center}
+\texttt{02 F1 FF FF}
+\end{center}
+
+因此完整寄生代码为：
+
+\begin{center}
+\texttt{90 90 90 90 90 90 90 E9 02 F1 FF FF}
+\end{center}
+
+\subsubsection{寄生代码写入与关键字段修改}
+
+完成地址与位移计算后，使用 ImHex 对样本文件进行了三处关键修改。第一，在文件偏移 0x0CF6 处写入寄生代码；第二，将 AddressOfEntryPoint 从 0x1404 修改为 0x22F6；第三，将 .rdata 节 Characteristics 从 0x40000040 修改为 0x60000040，使该节具有可执行权限。
+
+\begin{figure}[H]
+\centering
+
+
+\begin{subfigure}[t]{0.86\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{img/3.png}
+    \caption{在 .rdata 节末尾写入 7 个 NOP 与跳回原入口点的 JMP 指令}
+    \label{fig:exp33-code-write}
+\end{subfigure}
+
+\vspace{0.35cm}
+
+\begin{subfigure}[t]{0.86\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{img/4.png}
+    \caption{将 AddressOfEntryPoint 修改为寄生代码 RVA 0x22F6}
+    \label{fig:exp33-aep-modify}
+\end{subfigure}
+
+\vspace{0.35cm}
+
+\begin{subfigure}[t]{0.86\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{img/5.png}
+    \caption{将 .rdata 节属性由 0x40000040 修改为 0x60000040}
+    \label{fig:exp33-rdata-char-modify}
+\end{subfigure}
+
+\caption{寄生到非代码区段末尾实验中的三处关键修改}
+\label{fig:exp33-three-modify}
+
+\end{figure}
+
+如图~\ref{fig:exp33-three-modify} 所示，寄生代码写入位置为文件偏移 0x0CF6，写入内容为 7 个 NOP 和一条跳回原入口点的 JMP 指令；入口点字段被修改为 F6 22 00 00，对应 RVA 0x22F6；.rdata 节属性被修改为 0x60000040，表示该节增加了可执行权限。三处修改分别解决了“代码放在哪里”“程序从哪里开始执行”和“非代码节能否执行”的问题。
+
+\subsubsection{静态结构验证}
+
+完成修改后，使用 PEView 对关键字段进行静态验证，确认入口点字段与 .rdata 节属性均已被正确修改。
+
+\imgtwo[0.48\textwidth]
+{img/6.png}{PEView 验证入口点字段已修改为 0x22F6}{fig:exp33-peview-entry}
+{img/7.png}{PEView 验证 .rdata 节属性已修改为 0x60000040}{fig:exp33-peview-char}
+{入口点与 .rdata 节属性的静态验证结果}
+{fig:exp33-peview-verify}
+
+如图~\ref{fig:exp33-peview-verify} 所示，左图中 AddressOfEntryPoint 已由原始的 0x1404 修改为 0x22F6，说明程序入口点已经被重定向至 .rdata 节末尾的寄生代码位置；右图中 Characteristics 已变为 0x60000040，其中包含可执行与可读属性，说明该非代码节已经具备执行条件。
+
+\subsubsection{动态调试验证}
+
+随后使用 x32dbg 对程序执行过程进行动态验证，观察程序是否会首先进入 .rdata 节中的寄生代码，并在执行完寄生代码后跳回原始入口点继续运行。
+
+\imgtwo[0.48\textwidth]
+{img/8.png}{x32dbg 验证程序首先进入寄生代码位置}{fig:exp33-x32dbg-entry}
+{img/9.png}{x32dbg 验证寄生代码执行后跳回原入口点}{fig:exp33-x32dbg-jumpback}
+{寄生代码执行与跳回原入口点的动态验证结果}
+{fig:exp33-x32dbg-verify}
+
+如图~\ref{fig:exp33-x32dbg-verify} 所示，左图中程序加载后首先停在地址 00B722F6 处，当前位置对应新的入口点 RVA 0x22F6。该位置处可见前 7 条指令均为 nop，之后是一条 jmp control.B71404 指令。该结果表明程序已经按预期从 .rdata 节末尾的寄生代码开始执行。
+
+右图中，当单步执行完 jmp 指令后，控制流成功跳转至 00B71404，该位置对应原始入口点 RVA 0x1404。此时可以看到程序继续执行原始入口处的指令序列，说明寄生代码并未中断原程序主流程，而是实现了“先执行寄生代码，再返回原入口点”的设计目标。
+
+综合静态与动态验证结果可以确认：本实验成功将寄生代码写入非代码区段 .rdata 的末尾，通过修改入口点字段和节属性，使程序启动后先执行 7 个 nop，再借助 jmp 指令跳回原入口点继续运行，从而完整实现了“寄生到非代码区段末尾并跳回原入口点”的实验要求。
+\subsection{尾区段寄生之扩展区段大小}
+
+\subsubsection{实验目标与扩展寄生思路}
+
+前一实验中的尾区段寄生利用的是最后一个节内部已有的对齐空洞，文件长度不发生变化。但在实际情况下，如果寄生代码长度超过最后一个节原有空洞，就不能只在原空洞中覆盖写入，而需要扩展最后一个节在文件中的大小。本实验模拟“寄生代码超过尾区段原有剩余空间”的情况，通过扩展 \texttt{.reloc} 节的 \texttt{SizeOfRawData}，在原文件末尾之后增加一个文件对齐粒度的空间，并将寄生代码写入新增区域。
+
+本实验构造的控制流如下：
+
+\begin{center}
+\texttt{入口点 -> .reloc 原 VirtualSize 后的 JMP -> 新增扩展区中的 NOP -> JMP 跳回原入口点}
+\end{center}
+
+该过程不仅需要写入机器码，还必须同步修改 PE 结构字段，使新增内容能够被 PE 加载器识别和装载。涉及的关键字段包括 \texttt{VirtualSize}、\texttt{SizeOfRawData}、\texttt{AddressOfEntryPoint} 和节属性 \texttt{Characteristics}。
+
+\subsubsection{原始字段与扩展空间计算}
+
+根据样本文件的 PEView 分析结果，原始 \texttt{.reloc} 节的关键字段如下：
+
+\begin{center}
+\texttt{VirtualSize = 0x0122,\quad RVA = 0x14000,\quad SizeOfRawData = 0x0200,\quad PointerToRawData = 0x10000}
+\end{center}
+
+本实验将第一条跳转指令写在 \texttt{.reloc} 节原始 \texttt{VirtualSize} 之后，其文件偏移为：
+
+\begin{center}
+\texttt{0x10000 + 0x0122 = 0x10122}
+\end{center}
+
+对应的 RVA 为：
+
+\begin{center}
+\texttt{0x14000 + 0x0122 = 0x14122}
+\end{center}
+
+因此，本实验需要将程序入口点修改为 \texttt{0x14122}，使程序启动后首先执行该位置的第一条 \texttt{JMP} 指令。
+
+第一条 \texttt{JMP} 的目标是新增扩展区域的起始位置。原 \texttt{SizeOfRawData} 为 \texttt{0x0200}，因此扩展区起始文件偏移为：
+
+\begin{center}
+\texttt{0x10000 + 0x0200 = 0x10200}
+\end{center}
+
+对应的 RVA 为：
+
+\begin{center}
+\texttt{0x14000 + 0x0200 = 0x14200}
+\end{center}
+
+第一条 \texttt{JMP} 从 \texttt{0x14122} 跳转到 \texttt{0x14200}。由于 \texttt{JMP} 指令长度为 5 字节，因此相对位移为：
+
+\begin{center}
+\texttt{0x14200 - (0x14122 + 5) = 0x00D9}
+\end{center}
+
+所以第一条 \texttt{JMP} 的机器码为：
+
+\begin{center}
+\texttt{E9 D9 00 00 00}
+\end{center}
+
+在扩展区 \texttt{0x14200} 处写入 7 个 \texttt{NOP}，随后写入一条 \texttt{JMP} 指令跳回原入口点 \texttt{0x1404}。第二条 \texttt{JMP} 的开始 RVA 为：
+
+\begin{center}
+\texttt{0x14200 + 7 = 0x14207}
+\end{center}
+
+其后一条指令 RVA 为：
+
+\begin{center}
+\texttt{0x14207 + 5 = 0x1420C}
+\end{center}
+
+因此跳回原入口点的相对位移为：
+
+\begin{center}
+\texttt{0x1404 - 0x1420C = -0x12E08}
+\end{center}
+
+写成 32 位补码为：
+
+\begin{center}
+\texttt{0xFFFED1F8}
+\end{center}
+
+按小端序写入后，第二条 \texttt{JMP} 的位移字节为：
+
+\begin{center}
+\texttt{F8 D1 FE FF}
+\end{center}
+
+所以扩展区写入的完整机器码为：
+
+\begin{center}
+\texttt{90 90 90 90 90 90 90 E9 F8 D1 FE FF}
+\end{center}
+
+\subsubsection{文件扩展与关键字段修改}
+
+完成计算后，使用 ImHex 对样本文件进行修改。首先在文件偏移 \texttt{0x10122} 处写入第一条 \texttt{JMP} 指令 \texttt{E9 D9 00 00 00}，使入口点处的执行流跳转到新增扩展区域。随后将文件扩展到 \texttt{0x10400}，也就是在原文件末尾之后增加一个 \texttt{FileAlignment} 大小的空间。扩展完成后，在文件偏移 \texttt{0x10200} 处写入 7 个 \texttt{NOP} 和一条跳回原入口点的 \texttt{JMP} 指令。
+
+由于新增内容已经超过原 \texttt{SizeOfRawData} 范围，需要将 \texttt{.reloc} 节的 \texttt{SizeOfRawData} 从 \texttt{0x0200} 修改为 \texttt{0x0400}。同时，新增代码的有效末尾到达：
+
+\begin{center}
+\texttt{0x0200 + 7 + 5 = 0x020C}
+\end{center}
+
+因此将 \texttt{VirtualSize} 修改为 \texttt{0x020C}。最后，将可选映像头中的 \texttt{AddressOfEntryPoint} 修改为第一条 \texttt{JMP} 的 RVA，即 \texttt{0x14122}。
+
+\begin{figure}[H]
+    \centering
+
+    \begin{subfigure}[t]{0.86\textwidth}
+        \centering
+        \includegraphics[width=\linewidth,height=0.13\textheight,keepaspectratio]{img/10.png}
+        \caption{在 \texttt{0x10122} 处写入第一条 \texttt{JMP} 指令}
+        \label{fig:exp34-first-jmp}
+    \end{subfigure}
+
+    \vspace{0.25cm}
+
+    \begin{subfigure}[t]{0.86\textwidth}
+        \centering
+        \includegraphics[width=\linewidth,height=0.13\textheight,keepaspectratio]{img/11.png}
+        \caption{扩展文件并补齐新的文件对齐区域}
+        \label{fig:exp34-file-extend}
+    \end{subfigure}
+
+    \vspace{0.25cm}
+
+    \begin{subfigure}[t]{0.86\textwidth}
+        \centering
+        \includegraphics[width=\linewidth,height=0.13\textheight,keepaspectratio]{img/12.png}
+        \caption{在 \texttt{0x10200} 处写入 7 个 \texttt{NOP} 与回跳 \texttt{JMP}}
+        \label{fig:exp34-second-code}
+    \end{subfigure}
+
+    \vspace{0.25cm}
+
+    \begin{subfigure}[t]{0.86\textwidth}
+        \centering
+        \includegraphics[width=\linewidth,height=0.13\textheight,keepaspectratio]{img/13.png}
+        \caption{修改 \texttt{VirtualSize} 和 \texttt{SizeOfRawData}}
+        \label{fig:exp34-size-modify}
+    \end{subfigure}
+
+    \vspace{0.25cm}
+
+    \begin{subfigure}[t]{0.86\textwidth}
+        \centering
+        \includegraphics[width=\linewidth,height=0.13\textheight,keepaspectratio]{img/14.png}
+        \caption{修改入口点字段为 \texttt{0x14122}}
+        \label{fig:exp34-entry-modify}
+    \end{subfigure}
+
+    \caption{尾区段扩展寄生实验中的文件扩展与关键字段修改}
+    \label{fig:exp34-main-modify}
+\end{figure}
+
+如图~\ref{fig:exp34-main-modify} 所示，本实验依次完成了第一条跳转指令写入、文件对齐区域扩展、新增区域代码写入、节大小字段修改和入口点字段修改。其中，\texttt{VirtualSize} 被修改为 \texttt{0x020C}，\texttt{SizeOfRawData} 被修改为 \texttt{0x0400}，\texttt{AddressOfEntryPoint} 被修改为 \texttt{0x14122}。这些修改共同保证新增扩展区域能够被 PE 加载器识别，并使程序启动后首先进入寄生代码区域。
+
+\subsubsection{首次动态验证与异常原因分析}
+
+完成上述修改后，使用 x32dbg 打开修改后的程序。程序加载后首先停在新的入口点位置，对应 RVA \texttt{0x14122}。该位置处可以看到第一条 \texttt{JMP} 指令，其目标为扩展区域起始地址。然而，直接执行时程序进入异常处理流程，说明当前修改仍不完整。
+
+\imgtwo[0.48\textwidth]
+{img/15.png}{x32dbg 停在入口点处的第一条 \texttt{JMP} 指令}{fig:exp34-x32-first-jmp}
+{img/16.png}{未修改执行权限时进入异常处理流程}{fig:exp34-x32-exception}
+{未修改 \texttt{.reloc} 节执行权限时的异常现象}
+{fig:exp34-exception}
+
+如图~\ref{fig:exp34-exception} 所示，左图中程序已经停在 \texttt{OptionalHeader.AddressOfEntryPoint} 指向的位置，说明入口点修改是有效的；但右图显示程序执行后进入 \texttt{KiUserExceptionDispatcher}，说明在执行 \texttt{.reloc} 节中的代码时发生了访问异常。
+
+产生该问题的原因在于，\texttt{.reloc} 节原本是重定位相关的数据节，并不是代码节。其原始属性为 \texttt{0x42000040}，不包含可执行权限。虽然本实验已经将代码写入 \texttt{.reloc} 节并修改了入口点，但如果该节在内存中没有 \texttt{MEM\_EXECUTE} 权限，CPU 仍无法正常执行其中的指令。因此，需要继续修改 \texttt{.reloc} 节的 \texttt{Characteristics} 字段，为其增加可执行权限。
+
+\subsubsection{修改 \texttt{.reloc} 节执行权限}
+
+为解决访问异常问题，将 \texttt{.reloc} 节的 \texttt{Characteristics} 从原来的 \texttt{0x42000040} 修改为 \texttt{0x60000040}。该修改保留了初始化数据和可读属性，同时增加了内存可执行属性，使 \texttt{.reloc} 节中的寄生代码能够被正常执行。
+
+\imgsingle[0.82\textwidth]{img/17.png}{使用 ImHex 修改 \texttt{.reloc} 节属性为 \texttt{0x60000040}}{fig:exp34-char-modify}
+
+如图~\ref{fig:exp34-char-modify} 所示，在 \texttt{.reloc} 节的 \texttt{Characteristics} 字段处，将其字节改为对应 \texttt{0x60000040} 的小端序形式。该步骤的作用是为寄生代码所在节增加执行权限，避免再次进入访问异常。
+
+随后使用 PEView 重新查看 \texttt{.reloc} 节属性，确认修改是否成功。
+
+\imgsingle[0.82\textwidth]{img/18.png}{PEView 验证 \texttt{.reloc} 节已具备可执行权限}{fig:exp34-char-verify}
+
+如图~\ref{fig:exp34-char-verify} 所示，\texttt{.reloc} 节的 \texttt{Characteristics} 已经变为 \texttt{0x60000040}，并显示出 \texttt{IMAGE\_SCN\_MEM\_EXECUTE} 和 \texttt{IMAGE\_SCN\_MEM\_READ} 等属性。这说明 \texttt{.reloc} 节已经具备执行寄生代码的权限。
+
+\subsubsection{PE 结构最终验证}
+
+在完成文件扩展、节大小字段修改、入口点修改和节属性修改后，重新使用 PEView 对 PE 结构进行最终验证。
+
+\imgtwo[0.48\textwidth]
+{img/19.png}{PEView 验证 \texttt{.reloc} 节最终字段}{fig:exp34-peview-reloc-final}
+{img/20.png}{PEView 验证入口点已修改为 \texttt{0x14122}}{fig:exp34-peview-entry-final}
+{扩展尾区段后的 PE 结构最终验证}
+{fig:exp34-peview-final}
+
+如图~\ref{fig:exp34-peview-final} 所示，左图中 \texttt{.reloc} 节的 \texttt{VirtualSize} 已变为 \texttt{0x020C}，\texttt{SizeOfRawData} 已变为 \texttt{0x0400}，并且 \texttt{Characteristics} 已变为 \texttt{0x60000040}；右图中 \texttt{AddressOfEntryPoint} 已变为 \texttt{0x14122}。这些结果说明扩展尾区段寄生所需的 PE 结构字段已经全部修改完成。
+
+另外，根据原始 \texttt{SizeOfImage} 为 \texttt{0x15000}，扩展后的节尾为：
+
+\begin{center}
+\texttt{0x14000 + 0x020C = 0x1420C}
+\end{center}
+
+按照 \texttt{SectionAlignment = 0x1000} 向上对齐后仍为：
+
+\begin{center}
+\texttt{0x15000}
+\end{center}
+
+因此本实验中 \texttt{SizeOfImage} 不需要修改。
+
+\subsubsection{动态调试验证}
+
+最后使用 x32dbg 对扩展寄生后的控制流进行动态验证。程序入口首先指向 \texttt{0x14122}，执行第一条 \texttt{JMP} 后跳转到扩展区 \texttt{0x14200}，随后执行 7 个 \texttt{NOP}，再通过第二条 \texttt{JMP} 跳回原入口点 \texttt{0x1404}。
+
+\imgtwo[0.48\textwidth]
+{img/21.png}{x32dbg 验证程序跳转到扩展区并执行 7 个 \texttt{NOP}}{fig:exp34-x32-nop-area}
+{img/22.png}{x32dbg 验证第二条 \texttt{JMP} 成功跳回原入口点}{fig:exp34-x32-back-entry}
+{扩展尾区段寄生代码的动态执行与跳回原入口点验证}
+{fig:exp34-x32-final}
+
+如图~\ref{fig:exp34-x32-final} 所示，左图中程序已经跳转到扩展区域起始地址，对应 RVA \texttt{0x14200}，该位置显示 7 条 \texttt{nop} 指令，随后是一条跳回原入口点的 \texttt{jmp} 指令。右图中执行该 \texttt{jmp} 后，程序成功跳回原入口点位置，对应 RVA \texttt{0x1404}，该处机器码为 \texttt{6A 00}，反汇编结果为 \texttt{push 0}。这说明扩展尾区段中的寄生代码已经被成功加载并执行，且最终能够恢复原程序入口流程。
+
+
+\FloatBarrier
+
+
+
+
+
+
+
+
+\noindent {\color{red}\heiti\zihao{3} 六、实验结论：}
+
+本组实验完成了实验3-3和实验3-4两个 PE 文件寄生任务，分别验证了非代码区段寄生与尾区段扩展寄生两种典型情况。
+
+在实验3-3中，成功将寄生代码写入 \texttt{.rdata} 节末尾空洞。根据 \texttt{.rdata} 节的 \texttt{PointerToRawData = 0x0A00} 和 \texttt{VirtualSize = 0x02F6}，计算得到寄生代码文件偏移为 \texttt{0x0CF6}，对应 RVA 为 \texttt{0x22F6}。实验中将 \texttt{AddressOfEntryPoint} 从原始 \texttt{0x1404} 修改为 \texttt{0x22F6}，并在寄生位置写入 7 个 \texttt{NOP} 和一条跳回原入口点的 \texttt{JMP} 指令。其完整机器码为 \texttt{90 90 90 90 90 90 90 E9 02 F1 FF FF}。同时，将 \texttt{.rdata} 节的 \texttt{Characteristics} 从 \texttt{0x40000040} 修改为 \texttt{0x60000040}，使原本不可执行的非代码节具备执行权限。PEView 静态验证显示入口点和节属性均已修改成功，x32dbg 动态验证显示程序能够先进入 \texttt{.rdata} 节末尾的寄生代码，执行后再跳回原入口点 \texttt{0x1404}，说明实验3-3达到预期目标。
+
+在实验3-4中，成功完成了尾区段寄生时扩展区段大小的过程。实验以 \texttt{.reloc} 节作为尾区段，原始 \texttt{VirtualSize} 为 \texttt{0x0122}，\texttt{RVA} 为 \texttt{0x14000}，\texttt{SizeOfRawData} 为 \texttt{0x0200}，\texttt{PointerToRawData} 为 \texttt{0x10000}。第一条 \texttt{JMP} 被写入文件偏移 \texttt{0x10122}，对应 RVA 为 \texttt{0x14122}，并将程序入口点修改为该 RVA。随后将文件扩展到 \texttt{0x10400}，在扩展区文件偏移 \texttt{0x10200} 处写入 7 个 \texttt{NOP} 和一条跳回原入口点的 \texttt{JMP} 指令，完整机器码为 \texttt{90 90 90 90 90 90 90 E9 F8 D1 FE FF}。为保证新增内容属于合法节范围，实验将 \texttt{.reloc} 节的 \texttt{SizeOfRawData} 从 \texttt{0x0200} 修改为 \texttt{0x0400}，将 \texttt{VirtualSize} 修改为 \texttt{0x020C}。根据计算，扩展后的节尾为 \texttt{0x14000 + 0x020C = 0x1420C}，按 \texttt{SectionAlignment = 0x1000} 对齐后仍未超过原 \texttt{SizeOfImage = 0x15000}，因此 \texttt{SizeOfImage} 不需要修改。
+
+实验3-4首次动态调试时出现异常，原因是 \texttt{.reloc} 节原属性 \texttt{0x42000040} 不包含可执行权限。随后将 \texttt{.reloc} 节的 \texttt{Characteristics} 修改为 \texttt{0x60000040}，使其具备 \texttt{IMAGE\_SCN\_MEM\_EXECUTE} 和 \texttt{IMAGE\_SCN\_MEM\_READ} 属性。最终，x32dbg 验证程序能够从新入口点 \texttt{0x14122} 执行第一条 \texttt{JMP}，跳转到扩展区 \texttt{0x14200}，执行 7 个 \texttt{NOP} 后，再通过第二条 \texttt{JMP} 成功返回原入口点 \texttt{0x1404}。由此说明，实验3-4完整实现了“入口点重定向、尾区段扩展、扩展区代码执行、跳回原入口点”的控制流闭环。
+
+
+\vspace{1.2cm}
+
+\noindent {\color{red}\heiti\zihao{3} 七、总结及心得体会：}
+
+通过本组实验，我对 PE 文件中“结构字段”和“实际执行流程”之间的关系有了更清晰的理解。PE 文件不是简单的字节序列，程序运行时系统会依据 PE 头和节表进行装载。因此，修改 PE 文件时不能只关注某一处机器码是否写入成功，还必须检查节表字段、入口点字段和节属性是否与写入内容保持一致。实验3-3和实验3-4正好从两个不同角度说明了这一点：实验3-3突出的是非代码节的执行权限问题，实验3-4突出的是新增内容超出原节范围后的结构修正问题。
+
+在实验3-3中，最关键的认识是：非代码节中即使存在空洞，也不意味着写入其中的字节就可以直接执行。\texttt{.rdata} 节原本用于保存只读数据，不具备执行权限。如果只修改 \texttt{AddressOfEntryPoint}，程序虽然能够从逻辑上跳到寄生代码位置，但在真正执行时仍可能因为内存页权限不足而触发异常。因此，\texttt{Characteristics} 字段不是一个附属字段，而是直接影响程序运行结果的关键字段。通过将 \texttt{.rdata} 节属性修改为 \texttt{0x60000040}，我理解了 PE 文件中节权限对代码执行的重要作用。
+
+在实验3-4中，最大的体会是尾区段寄生超过原空洞后，问题会从“找地方写代码”变成“让新增内容成为合法节内容”。如果只在文件末尾添加字节，但不修改 \texttt{SizeOfRawData}，新增内容在文件结构上不属于该节；如果不修改 \texttt{VirtualSize}，新增内容在内存映像中也不能被视为该节的有效范围。实验中还需要根据 \texttt{SectionAlignment} 检查 \texttt{SizeOfImage} 是否变化，这说明 PE 文件修改必须同时考虑文件视角和内存视角。通过这一过程，我进一步理解了 \texttt{FileAlignment} 和 \texttt{SectionAlignment} 的区别：前者约束文件中的节大小对齐，后者约束内存中的节映射边界。
+
+这两个实验还让我认识到，相对 \texttt{JMP} 指令的位移计算是控制流恢复的关键。无论是在 \texttt{.rdata} 节末尾跳回原入口点，还是在扩展区执行后跳回原入口点，\texttt{E9} 后面的 4 字节都不是目标地址，而是相对位移。若没有考虑 \texttt{JMP} 指令本身的 5 字节长度，就会导致跳转目标错误，程序无法回到原流程。因此，实验中的每一步计算都必须与 x32dbg 中的实际地址相互验证，不能只凭直觉修改字节。
+
+从安全分析角度看，这组实验也提供了识别 PE 寄生行为的思路。若一个 PE 文件的入口点异常指向非代码节或尾区段，某个数据节突然被赋予 \texttt{IMAGE\_SCN\_MEM\_EXECUTE} 权限，或者最后一个节的 \texttt{SizeOfRawData}、\texttt{VirtualSize} 出现异常扩展，就需要警惕其是否存在寄生代码或控制流劫持行为。也就是说，实验中的修改过程反过来就是恶意样本分析中的检查线索。
+
+
+\vspace{1.2cm}
+
+\begin{flushright}
+{\heiti\zihao{3} 报告评分：}\qquad\qquad\qquad\qquad
+
+
+\vspace{1.2cm}
+
+{\heiti\zihao{3} 指导教师签字：}\qquad\qquad\qquad
+
+\end{flushright}
+
+\end{document}
