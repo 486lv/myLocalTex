@@ -1,0 +1,80 @@
+\relax 
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces RVA 与文件偏移换算的基本分析流程}}{2}{}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:principle-rva-offset}{{1}{2}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces DLL 导出表中函数名到函数入口地址的映射关系}}{2}{}\protected@file@percent }
+\newlabel{fig:principle-export}{{2}{2}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces 导入表加载前后 IAT 内容变化}}{3}{}\protected@file@percent }
+\newlabel{fig:principle-import}{{3}{3}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {1}}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.1}在 DLL 导出表中查找函数地址}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.1}实验目标与查找思路}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.2}定位导出表并观察表头字段}{4}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces 查看 \texttt  {IMAGE\_EXPORT\_DIRECTORY} 表头字段}}{5}{}\protected@file@percent }
+\newlabel{fig:exp41-export-directory}{{4}{5}{定位导出表并观察表头字段}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.3}使用编辑器验证导出表表头内容}{6}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces 在 ImHex 中验证导出表表头原始字节}}{6}{}\protected@file@percent }
+\newlabel{fig:exp41-export-raw}{{5}{6}{使用编辑器验证导出表表头内容}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.4}通过函数名指针表验证函数名字符串}{6}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces 查看 \texttt  {EXPORT Name Pointer Table} 并定位 \texttt  {AnimateWindow}}}{7}{}\protected@file@percent }
+\newlabel{fig:exp41-name-pointer-table}{{6}{7}{通过函数名指针表验证函数名字符串}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces 在 ImHex 中验证 \texttt  {0x5644} 指向 \texttt  {AnimateWindow} 字符串}}{7}{}\protected@file@percent }
+\newlabel{fig:exp41-name-string}{{7}{7}{通过函数名指针表验证函数名字符串}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.5}通过序号表确定函数地址表索引}{7}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces 查看 \texttt  {EXPORT Ordinal Table} 并确定函数地址表索引}}{8}{}\protected@file@percent }
+\newlabel{fig:exp41-ordinal-table}{{8}{8}{通过序号表确定函数地址表索引}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.6}查找函数入口 RVA 并定位函数入口}{8}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces 在 ImHex 中观察 \texttt  {AnimateWindow} 函数入口机器码}}{9}{}\protected@file@percent }
+\newlabel{fig:exp41-function-entry}{{9}{9}{查找函数入口 RVA 并定位函数入口}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.2}DLL 导入表结构的验证}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.1}实验目标与验证思路}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.2}定位导入表 RVA 与所在节}{10}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces 在数据目录中查看 \texttt  {IMPORT Table} 的 RVA 和 Size}}{10}{}\protected@file@percent }
+\newlabel{fig:exp42-import-dir}{{10}{10}{定位导入表 RVA 与所在节}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces 查看 \texttt  {.rdata} 节表字段并判断导入表所在节}}{10}{}\protected@file@percent }
+\newlabel{fig:exp42-rdata-section}{{11}{10}{定位导入表 RVA 与所在节}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.3}观察导入描述符结构}{11}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {12}{\ignorespaces 查看 \texttt  {IMPORT Directory Table} 中的导入描述符}}{11}{}\protected@file@percent }
+\newlabel{fig:exp42-import-descriptor}{{12}{11}{观察导入描述符结构}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.4}观察加载前的 INT 与 IAT}{12}{}\protected@file@percent }
+\newlabel{fig:exp42-int-before}{{13a}{12}{观察加载前的 INT 与 IAT}{}{}}
+\newlabel{sub@fig:exp42-int-before}{{a}{12}{观察加载前的 INT 与 IAT}{}{}}
+\newlabel{fig:exp42-iat-before}{{13b}{12}{观察加载前的 INT 与 IAT}{}{}}
+\newlabel{sub@fig:exp42-iat-before}{{b}{12}{观察加载前的 INT 与 IAT}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {13}{\ignorespaces 加载前 INT 与 IAT 表项内容对比}}{12}{}\protected@file@percent }
+\newlabel{fig:exp42-int-iat-before}{{13}{12}{观察加载前的 INT 与 IAT}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.5}验证 Hint/Name RVA 指向函数名结构}{13}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {14}{\ignorespaces 在 ImHex 中验证 \texttt  {0x21C2} 指向 \texttt  {GetDlgItemTextA} 的 Hint/Name 结构}}{13}{}\protected@file@percent }
+\newlabel{fig:exp42-hint-name}{{14}{13}{验证 Hint/Name RVA 指向函数名结构}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.6}观察加载后的 IAT 内容}{13}{}\protected@file@percent }
+\newlabel{fig:exp42-iat-cpu}{{15a}{14}{观察加载后的 IAT 内容}{}{}}
+\newlabel{sub@fig:exp42-iat-cpu}{{a}{14}{观察加载后的 IAT 内容}{}{}}
+\newlabel{fig:exp42-iat-memory}{{15b}{14}{观察加载后的 IAT 内容}{}{}}
+\newlabel{sub@fig:exp42-iat-memory}{{b}{14}{观察加载后的 IAT 内容}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {15}{\ignorespaces 加载后 IAT 表项被系统加载器改写为真实 API 地址}}{14}{}\protected@file@percent }
+\newlabel{fig:exp42-iat-after}{{15}{14}{观察加载后的 IAT 内容}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3}EPO 之指令 Patch}{14}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.3.1}实验目标与修改思路}{14}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.3.2}定位 \texttt  {.text} 节空洞}{15}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {16}{\ignorespaces 查看 \texttt  {.text} 节原始字段}}{15}{}\protected@file@percent }
+\newlabel{fig:exp43-text-section}{{16}{15}{定位 \texttt  {.text} 节空洞}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.3.3}写入寄生代码}{16}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {17}{\ignorespaces 在 \texttt  {0x093C} 处写入寄生代码}}{16}{}\protected@file@percent }
+\newlabel{fig:exp43-parasite-code}{{17}{16}{写入寄生代码}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.3.4}修改 \texttt  {.text} 节表字段}{16}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {18}{\ignorespaces 修改 \texttt  {.text} 节的 \texttt  {VirtualSize} 和 \texttt  {Characteristics}}}{17}{}\protected@file@percent }
+\newlabel{fig:exp43-section-modify}{{18}{17}{修改 \texttt  {.text} 节表字段}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.3.5}Patch 入口附近的 \texttt  {CALL} 指令}{17}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {19}{\ignorespaces 将入口附近原有 \texttt  {CALL} 指令 Patch 为调用寄生代码}}{18}{}\protected@file@percent }
+\newlabel{fig:exp43-call-patch}{{19}{18}{Patch 入口附近的 \texttt  {CALL} 指令}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.3.6}修改寄生代码尾部跳转}{18}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {20}{\ignorespaces 修改寄生代码尾部 \texttt  {JMP}，使其跳回原导入跳板}}{19}{}\protected@file@percent }
+\newlabel{fig:exp43-tail-jmp}{{20}{19}{修改寄生代码尾部跳转}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.3.7}动态调试验证}{19}{}\protected@file@percent }
+\newlabel{fig:exp43-debug-entry}{{21a}{19}{动态调试验证}{}{}}
+\newlabel{sub@fig:exp43-debug-entry}{{a}{19}{动态调试验证}{}{}}
+\newlabel{fig:exp43-debug-parasite}{{21b}{19}{动态调试验证}{}{}}
+\newlabel{sub@fig:exp43-debug-parasite}{{b}{19}{动态调试验证}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {21}{\ignorespaces x32dbg 中验证 EPO Patch 后的执行链}}{19}{}\protected@file@percent }
+\newlabel{fig:exp43-debug-chain}{{21}{19}{动态调试验证}{}{}}
+\gdef \@abspage@last{22}

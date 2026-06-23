@@ -1,0 +1,934 @@
+﻿\documentclass[12pt]{ctexart}
+
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{indentfirst}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{placeins}
+
+\usetikzlibrary{arrows.meta,positioning,calc}
+
+\setlength{\parindent}{2em}
+\setstretch{1.35}
+\captionsetup{font=small}
+
+\setcounter{secnumdepth}{3}
+
+\titleformat{\section}
+{\bfseries\zihao{4}}
+{\thesection}
+{0.8em}
+{}
+
+\titleformat{\subsection}
+{\bfseries\zihao{-4}}
+{\thesubsection}
+{0.8em}
+{}
+
+\titleformat{\subsubsection}
+{\bfseries\normalsize}
+{\thesubsubsection}
+{0.8em}
+{}
+
+\renewcommand{\figurename}{图}
+\captionsetup[figure]{font=small,labelsep=space}
+
+% 单图
+\newcommand{\imgsingle}[4][0.75\textwidth]{
+\begin{figure}[H]
+\centering
+\includegraphics[width=#1]{#2}
+\caption{#3}
+\label{#4}
+\end{figure}
+}
+
+% 两图横向合并
+\newcommand{\imgtwo}[9][0.48\textwidth]{
+\begin{figure}[H]
+\centering
+\begin{subfigure}[t]{#1}
+\centering
+\includegraphics[width=\linewidth]{#2}
+\caption{#3}
+\label{#4}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{#1}
+\centering
+\includegraphics[width=\linewidth]{#5}
+\caption{#6}
+\label{#7}
+\end{subfigure}
+\caption{#8}
+\label{#9}
+\end{figure}
+}
+
+\begin{document}
+
+\thispagestyle{empty}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.70\textwidth]{img/0.png}
+\end{figure}
+
+\vspace{2cm}
+
+\noindent
+\hspace{1.5em}学生姓名\textbf{：}吕乐彬
+\hfill
+学号\textbf{：}2023080904007
+\hfill
+指导教师\textbf{：}李忻洋
+
+\vspace{2cm}
+
+\noindent {\heiti\zihao{3} 一、实验项目名称：}
+实验4-1.在DLL导出表中查找函数地址、实验4-2.Dll导入表结构的验证、实验4-3.EPO之指令Patch
+
+\vspace{0.8cm}
+
+\noindent {\heiti\zihao{3} 二、实验目的：}
+
+本次实验围绕 Windows PE 文件中的 DLL 导出表、DLL 导入表以及 EPO 指令 Patch 技术展开，目的是在静态分析和动态调试结合的过程中，理解 PE 文件中函数查找、导入解析和执行流修改的基本机制。
+
+首先，通过分析 \texttt{user32.dll} 的导出表，掌握从数据目录定位导出表、从 RVA 换算文件偏移、读取 \texttt{IMAGE\_EXPORT\_DIRECTORY} 表头字段，并通过函数名指针表、序号表和函数地址表查找指定导出函数入口地址的方法。该部分实验重点在于理解 DLL 导出函数并不是直接按函数名保存地址，而是通过多张表共同完成“函数名到函数入口 RVA”的映射。
+
+其次，通过分析 \texttt{Control.exe} 的导入表，掌握 \texttt{IMAGE\_IMPORT\_DESCRIPTOR}、INT、IAT 和 \texttt{Hint/Name} 结构之间的关系。通过比较程序加载前后的 IAT 内容，验证加载前 IAT 保存的是指向函数名结构的 RVA，而程序加载后 IAT 会被系统加载器改写为真实 API 函数入口地址。
+
+最后，通过 EPO 指令 Patch 实验，理解在不直接修改 \texttt{AddressOfEntryPoint} 的情况下，如何利用程序原有执行路径中的 \texttt{CALL} 指令引入寄生代码，并在寄生代码执行完成后跳回原执行流程。该部分实验重点在于掌握代码空洞定位、节属性修改、相对跳转偏移计算、寄生代码写入和 x32dbg 动态验证方法。
+
+\vspace{0.8cm}
+
+\noindent {\heiti\zihao{3} 三、实验原理：}
+
+PE 文件由 DOS 头、NT 头、可选映像头、节表和各节数据组成。程序在磁盘文件中的偏移地址与加载到内存后的 RVA 并不完全相同，因此在分析导出表、导入表和指令位置时，需要频繁进行 RVA 与文件偏移之间的换算。若目标 RVA 位于某一节内，其文件偏移可按以下方式计算：
+
+\begin{center}
+\texttt{文件偏移 = RVA - 节 RVA + PointerToRawData}
+\end{center}
+
+该公式是本实验中定位导出表、导入表、函数名字符串、IAT 表项和寄生代码位置的基础。
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.3cm,
+    box/.style={draw, rounded corners, align=center, minimum width=3.0cm, minimum height=0.8cm},
+    arrow/.style={-{Stealth}, thick}
+]
+\node[box] (rva) {目标 RVA};
+\node[box, right=1.2cm of rva] (section) {判断所在节};
+\node[box, right=1.2cm of section] (offset) {换算文件偏移};
+\node[box, right=1.2cm of offset] (raw) {定位原始字节};
+
+\draw[arrow] (rva) -- (section);
+\draw[arrow] (section) -- (offset);
+\draw[arrow] (offset) -- (raw);
+\end{tikzpicture}
+\caption{RVA 与文件偏移换算的基本分析流程}
+\label{fig:principle-rva-offset}
+\end{figure}
+
+DLL 导出表用于描述 DLL 对外提供的函数。导出表的入口由可选映像头数据目录中的 \texttt{EXPORT Table} 指出。导出表表头中包含函数地址表 RVA、函数名指针表 RVA、序号表 RVA、导出序号基值以及函数数量等字段。通过函数名查找函数入口地址时，需要先在函数名指针表中找到函数名字符串，再通过同位置的序号表项得到函数地址表索引，最后在函数地址表中读取函数入口 RVA。其逻辑关系如下：
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=0.95cm,
+    box/.style={draw, rounded corners, align=center, minimum width=4.0cm, minimum height=0.75cm},
+    arrow/.style={-{Stealth}, thick}
+]
+\node[box] (export) {IMAGE\_EXPORT\_DIRECTORY};
+\node[box, below left=0.8cm and 1.4cm of export] (nameptr) {函数名指针表\\Name Pointer Table};
+\node[box, below=0.8cm of export] (ordinal) {序号表\\Ordinal Table};
+\node[box, below right=0.8cm and 1.4cm of export] (addr) {函数地址表\\Address Table};
+\node[box, below=0.9cm of ordinal] (entry) {函数入口 RVA};
+
+\draw[arrow] (export) -- (nameptr);
+\draw[arrow] (export) -- (ordinal);
+\draw[arrow] (export) -- (addr);
+\draw[arrow] (nameptr) -- (ordinal);
+\draw[arrow] (ordinal) -- (addr);
+\draw[arrow] (addr) -- (entry);
+\end{tikzpicture}
+\caption{DLL 导出表中函数名到函数入口地址的映射关系}
+\label{fig:principle-export}
+\end{figure}
+
+DLL 导入表用于描述当前 EXE 依赖哪些 DLL 以及需要使用其中哪些函数。每个 \texttt{IMAGE\_IMPORT\_DESCRIPTOR} 对应一个 DLL，其中 \texttt{OriginalFirstThunk} 或 \texttt{Import Name Table} 指向 INT，\texttt{FirstThunk} 或 \texttt{Import Address Table} 指向 IAT。加载前，INT 与 IAT 通常都保存指向 \texttt{IMAGE\_IMPORT\_BY\_NAME} 的 RVA，也就是指向“Hint + 函数名字符串”的结构；加载后，系统加载器会根据 DLL 导出表解析真实函数地址，并将真实地址写入 IAT。
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.1cm,
+    box/.style={draw, rounded corners, align=center, minimum width=3.6cm, minimum height=0.8cm},
+    arrow/.style={-{Stealth}, thick}
+]
+\node[box] (descriptor) {导入描述符\\Import Descriptor};
+\node[box, below left=0.8cm and 1.2cm of descriptor] (int) {INT\\Hint/Name RVA};
+\node[box, below right=0.8cm and 1.2cm of descriptor] (iat1) {加载前 IAT\\Hint/Name RVA};
+\node[box, below=1.0cm of descriptor] (loader) {系统加载器\\解析 DLL 导出表};
+\node[box, below=0.9cm of loader] (iat2) {加载后 IAT\\真实 API 地址};
+
+\draw[arrow] (descriptor) -- (int);
+\draw[arrow] (descriptor) -- (iat1);
+\draw[arrow] (int) -- (loader);
+\draw[arrow] (iat1) -- (loader);
+\draw[arrow] (loader) -- (iat2);
+\end{tikzpicture}
+\caption{导入表加载前后 IAT 内容变化}
+\label{fig:principle-import}
+\end{figure}
+
+EPO 指令 Patch 的核心思想是“不直接改入口点，而是改执行路径”。程序启动后仍从原入口点开始执行，但当执行到被选中的原有 \texttt{CALL} 或 \texttt{JMP} 指令时，程序会先跳转到寄生代码。寄生代码执行完成后，再通过尾部跳转回原来的 API 调用链或原程序指令位置，从而使原程序能够继续运行。本实验中选择入口点附近的相对 \texttt{CALL} 指令作为 Patch 点，将其改为调用 \texttt{.text} 节空洞中的寄生代码，再由寄生代码跳回 \texttt{GetModuleHandleA} 的导入跳板。
+
+
+
+\vspace{0.8cm}
+
+\noindent {\heiti\zihao{3} 四、实验环境（设备、元器件）：}
+
+本实验在 Windows 系统环境下完成，实验对象包括 \texttt{user32.dll} 与 \texttt{Control.exe}。其中，\texttt{user32.dll} 用于 DLL 导出表分析，\texttt{Control.exe} 用于 DLL 导入表验证和 EPO 指令 Patch 实验。
+
+实验过程中主要使用 PEView、ImHex 和 x32dbg 三类工具。PEView 用于解析 PE 文件结构，查看数据目录、节表、导出表、导入描述符、INT 和 IAT 等结构化字段；ImHex 用于直接查看和修改 PE 文件原始十六进制字节，完成 RVA 与文件偏移换算后的定位、寄生代码写入、节字段修改和指令 Patch；x32dbg 用于动态调试修改后的程序，观察程序加载基址、入口点指令、寄生代码执行过程以及 IAT 加载后的变化。
+
+实验文件与截图统一放置在实验目录中，报告中的截图文件统一保存在 \texttt{img} 文件夹下。实验过程中使用的主要文件包括：
+
+\begin{center}
+\texttt{user32.dll,\quad Control.exe}
+\end{center}
+
+使用的主要工具包括：
+
+\begin{center}
+\texttt{PEView,\quad ImHex,\quad x32dbg}
+\end{center}
+
+\noindent {\color{red}\heiti\zihao{3} 五、实验步骤：}
+\section{}
+\subsection{在 DLL 导出表中查找函数地址}
+
+\subsubsection{实验目标与查找思路}
+
+本实验以 \texttt{user32.dll} 为分析对象，目标是在 DLL 的导出表中查找指定导出函数的入口地址。DLL 作为 PE 文件的一种，同样包含 DOS 头、PE 头、可选映像头和节表等结构。导出函数的信息并不是直接散乱存放在文件中，而是由数据目录中的 \texttt{EXPORT Table} 指向导出表结构，再由导出表中的函数地址表、函数名指针表和序号表共同完成函数名到函数入口地址的映射。
+
+本实验按照以下顺序进行分析：首先在可选映像头的数据目录中找到导出表入口 RVA；然后根据节表判断导出表位于哪个节，并将 RVA 换算为文件偏移；随后观察 \texttt{IMAGE\_EXPORT\_DIRECTORY} 表头中的关键字段；最后通过函数名指针表、序号表和函数地址表，查找学号后两位对应导出函数的入口地址，并在文件中定位该函数入口处的机器码。
+
+\subsubsection{定位导出表并观察表头字段}
+
+使用 PEView 打开实验提供的 \texttt{user32.dll}，在 \texttt{IMAGE\_OPTIONAL\_HEADER} 的数据目录中找到 \texttt{EXPORT Table} 项。该项给出了导出表的入口 RVA 和导出表大小。本实验中导出表信息如下：
+
+\begin{center}
+\texttt{Export Table RVA = 0x00003900}
+\end{center}
+
+\begin{center}
+\texttt{Export Table Size = 0x00004BA9}
+\end{center}
+
+随后查看 \texttt{.text} 节表字段。由 PEView 可知，\texttt{.text} 节的关键字段为：
+
+\begin{center}
+\texttt{VirtualSize = 0x0005F283,\quad RVA = 0x00001000,\quad PointerToRawData = 0x00000400}
+\end{center}
+
+因此，\texttt{.text} 节在内存中的 RVA 范围为：
+
+\begin{center}
+\texttt{0x1000 < RVA < 0x1000 + 0x5F283 = 0x60283}
+\end{center}
+
+由于：
+
+\begin{center}
+\texttt{0x1000 < 0x3900 < 0x60283}
+\end{center}
+
+所以可以判断导出表位于 \texttt{.text} 节中。根据 RVA 到文件偏移的换算公式：
+
+\begin{center}
+\texttt{文件偏移 = RVA - 节 RVA + PointerToRawData}
+\end{center}
+
+可得导出表表头的文件偏移为：
+
+\begin{center}
+\texttt{0x3900 - 0x1000 + 0x0400 = 0x2D00}
+\end{center}
+
+因此，\texttt{IMAGE\_EXPORT\_DIRECTORY} 的文件偏移为 \texttt{0x2D00}。
+
+\imgsingle[0.86\textwidth]{img/1.png}{查看 \texttt{IMAGE\_EXPORT\_DIRECTORY} 表头字段}{fig:exp41-export-directory}
+
+如图~\ref{fig:exp41-export-directory} 所示，导出表表头中的关键字段如下：
+
+\begin{center}
+\texttt{Name RVA = 0x000055C0}
+\end{center}
+
+\begin{center}
+\texttt{Ordinal Base = 0x00000001}
+\end{center}
+
+\begin{center}
+\texttt{Number of Functions = 0x000002DC}
+\end{center}
+
+\begin{center}
+\texttt{Number of Names = 0x000002DC}
+\end{center}
+
+\begin{center}
+\texttt{Address Table RVA = 0x00003928}
+\end{center}
+
+\begin{center}
+\texttt{Name Pointer Table RVA = 0x00004498}
+\end{center}
+
+\begin{center}
+\texttt{Ordinal Table RVA = 0x00005008}
+\end{center}
+
+其中，\texttt{Address Table RVA} 指向函数地址表，表中存放导出函数入口 RVA；\texttt{Name Pointer Table RVA} 指向函数名指针表，表中存放函数名字符串的 RVA；\texttt{Ordinal Table RVA} 指向序号表，表中存放函数名对应到函数地址表的索引。
+
+\subsubsection{使用编辑器验证导出表表头内容}
+
+为了验证 PEView 解析结果与文件中的原始字节一致，使用 ImHex 打开 \texttt{user32.dll}，跳转到前面计算得到的导出表文件偏移 \texttt{0x2D00}。
+
+\imgsingle[0.86\textwidth]{img/2.png}{在 ImHex 中验证导出表表头原始字节}{fig:exp41-export-raw}
+
+如图~\ref{fig:exp41-export-raw} 所示，文件偏移 \texttt{0x2D00} 处的原始字节与 PEView 中解析出的导出表字段能够对应。由于 PE 文件采用小端序存储多字节整数，因此各字段在文件中的字节顺序与数值显示顺序相反。例如：
+
+\begin{center}
+\texttt{C0 55 00 00 -> Name RVA = 0x000055C0}
+\end{center}
+
+\begin{center}
+\texttt{01 00 00 00 -> Ordinal Base = 0x00000001}
+\end{center}
+
+\begin{center}
+\texttt{DC 02 00 00 -> Number of Functions = 0x000002DC}
+\end{center}
+
+\begin{center}
+\texttt{DC 02 00 00 -> Number of Names = 0x000002DC}
+\end{center}
+
+\begin{center}
+\texttt{28 39 00 00 -> Address Table RVA = 0x00003928}
+\end{center}
+
+\begin{center}
+\texttt{98 44 00 00 -> Name Pointer Table RVA = 0x00004498}
+\end{center}
+
+\begin{center}
+\texttt{08 50 00 00 -> Ordinal Table RVA = 0x00005008}
+\end{center}
+
+由此可以确认，导出表表头的文件偏移 \texttt{0x2D00} 计算正确，且 PEView 对导出表字段的解析结果与文件中的实际字节一致。
+
+\subsubsection{通过函数名指针表验证函数名字符串}
+
+接下来查看函数名指针表。根据导出表表头，函数名指针表的 RVA 为 \texttt{0x4498}。由于该表也位于 \texttt{.text} 节中，其文件偏移为：
+
+\begin{center}
+\texttt{0x4498 - 0x1000 + 0x0400 = 0x3898}
+\end{center}
+
+在 PEView 中打开 \texttt{EXPORT Name Pointer Table}，观察函数名指针表内容。
+
+\imgsingle[0.86\textwidth]{img/3.png}{查看 \texttt{EXPORT Name Pointer Table} 并定位 \texttt{AnimateWindow}}{fig:exp41-name-pointer-table}
+
+如图~\ref{fig:exp41-name-pointer-table} 所示，学号末位为 7，对应的函数名指针表项显示为：
+
+\begin{center}
+\texttt{Function Name RVA = 0x00005644}
+\end{center}
+
+\begin{center}
+\texttt{Function Name = AnimateWindow}
+\end{center}
+
+这说明函数名指针表中存放的并不是函数入口地址，而是函数名字符串的 RVA。将该 RVA 换算为文件偏移：
+
+\begin{center}
+\texttt{0x5644 - 0x1000 + 0x0400 = 0x4A44}
+\end{center}
+
+随后在 ImHex 中跳转到文件偏移 \texttt{0x4A44}，验证该处是否确实为函数名字符串。
+
+\imgsingle[0.86\textwidth]{img/4.png}{在 ImHex 中验证 \texttt{0x5644} 指向 \texttt{AnimateWindow} 字符串}{fig:exp41-name-string}
+
+如图~\ref{fig:exp41-name-string} 所示，文件偏移 \texttt{0x4A44} 处可以看到字符串 \texttt{AnimateWindow}，其前后还连续存放了其他导出函数名，如 \texttt{AllowSetForegroundWindow}、\texttt{AnyPopup} 等。这说明函数名指针表中的 \texttt{Function Name RVA} 确实指向文件中的函数名字符串。
+
+\subsubsection{通过序号表确定函数地址表索引}
+
+函数名指针表只能定位函数名字符串，不能直接得到函数入口地址。要从函数名找到函数地址，还需要通过序号表获得该函数在函数地址表中的索引。
+
+\imgsingle[0.86\textwidth]{img/5.png}{查看 \texttt{EXPORT Ordinal Table} 并确定函数地址表索引}{fig:exp41-ordinal-table}
+
+如图~\ref{fig:exp41-ordinal-table} 所示，\texttt{AnimateWindow} 对应的序号表项为：
+
+\begin{center}
+\texttt{Function Ordinal Data = 0x0006}
+\end{center}
+
+由于该值表示函数地址表中的索引，因此：
+
+\begin{center}
+\texttt{AnimateWindow 在 EXPORT Address Table 中的索引 = 0x0006}
+\end{center}
+
+同时，PEView 的 Value 栏中显示 \texttt{0007 AnimateWindow}，这是因为导出表中的 \texttt{Ordinal Base = 1}，因此导出序号为：
+
+\begin{center}
+\texttt{Ordinal = Ordinal Base + Index = 1 + 6 = 7}
+\end{center}
+
+这说明学号后两位 \texttt{07} 对应的导出函数为 \texttt{AnimateWindow}。
+
+\subsubsection{查找函数入口 RVA 并定位函数入口}
+
+根据导出表表头，函数地址表的 RVA 为 \texttt{0x3928}。函数地址表中每一项占 4 字节，\texttt{AnimateWindow} 对应的索引为 \texttt{0x0006}，因此该函数在函数地址表中的表项 RVA 为：
+
+\begin{center}
+\texttt{0x3928 + 6 * 4 = 0x3940}
+\end{center}
+
+换算为文件偏移：
+
+\begin{center}
+\texttt{0x3940 - 0x1000 + 0x0400 = 0x2D40}
+\end{center}
+
+在前面对导出表原始字节的验证图中，文件偏移 \texttt{0x2D40} 处的 4 字节为：
+
+\begin{center}
+\texttt{56 21 01 00}
+\end{center}
+
+按小端序还原后得到：
+
+\begin{center}
+\texttt{AnimateWindow 函数入口 RVA = 0x00012156}
+\end{center}
+
+由于该 RVA 仍位于 \texttt{.text} 节中，因此其文件偏移为：
+
+\begin{center}
+\texttt{0x12156 - 0x1000 + 0x0400 = 0x11556}
+\end{center}
+
+最后在 ImHex 中跳转到文件偏移 \texttt{0x11556}，观察该函数入口处的机器码。
+
+\imgsingle[0.86\textwidth]{img/6.png}{在 ImHex 中观察 \texttt{AnimateWindow} 函数入口机器码}{fig:exp41-function-entry}
+
+如图~\ref{fig:exp41-function-entry} 所示，在文件偏移 \texttt{0x11556} 处可以看到函数入口处的机器码：
+
+\begin{center}
+\texttt{8B FF 55 8B EC ...}
+\end{center}
+
+其中 \texttt{8B FF 55 8B EC} 是常见的函数入口序列，对应反汇编形式通常为：
+
+\begin{center}
+\texttt{mov edi, edi; push ebp; mov ebp, esp}
+\end{center}
+
+由此可以确认，通过导出表查找到的 \texttt{AnimateWindow} 函数入口 RVA 为 \texttt{0x12156}，对应文件偏移为 \texttt{0x11556}，查找过程正确。
+
+\FloatBarrier
+
+\subsection{DLL 导入表结构的验证}
+
+\subsubsection{实验目标与验证思路}
+
+本实验以 \texttt{Control.exe} 为分析对象，验证 Windows PE 文件的导入表机制。导入表的作用是描述当前程序需要从哪些 DLL 中导入哪些 API 函数。程序在磁盘文件中并不直接保存被导入函数的真实内存地址，而是保存指向函数名结构的 RVA；当程序被系统加载后，加载器会根据导入表找到对应 DLL，再通过 DLL 的导出表查找函数入口地址，并将真实函数地址写入 IAT 中。
+
+因此，本实验主要验证两件事：第一，加载前的 INT 和 IAT 中保存的是 \texttt{Hint/Name RVA}，也就是指向函数名结构的 RVA；第二，加载后内存中的 IAT 会被系统加载器改写为真实 API 函数入口地址。实验过程按照“定位导入表、观察导入描述符、比较加载前 INT/IAT、验证 Hint/Name 结构、观察加载后 IAT”的顺序展开。
+
+\subsubsection{定位导入表 RVA 与所在节}
+
+首先使用 PEView 打开 \texttt{Control.exe}，在 \texttt{IMAGE\_OPTIONAL\_HEADER} 的数据目录中查找 \texttt{IMPORT Table} 项。该项给出了导入表的入口 RVA 和大小。
+
+\imgsingle[0.86\textwidth]{img/7.png}{在数据目录中查看 \texttt{IMPORT Table} 的 RVA 和 Size}{fig:exp42-import-dir}
+
+如图~\ref{fig:exp42-import-dir} 所示，\texttt{Control.exe} 的导入表信息为：
+
+\begin{center}
+\texttt{IMPORT Table RVA = 0x000020C4}
+\end{center}
+
+\begin{center}
+\texttt{IMPORT Table Size = 0x00000050}
+\end{center}
+
+随后查看节表，判断导入表 RVA \texttt{0x20C4} 落在哪个节中。
+
+\imgsingle[0.86\textwidth]{img/8.png}{查看 \texttt{.rdata} 节表字段并判断导入表所在节}{fig:exp42-rdata-section}
+
+如图~\ref{fig:exp42-rdata-section} 所示，\texttt{.rdata} 节的关键字段为：
+
+\begin{center}
+\texttt{VirtualSize = 0x000002F6,\quad RVA = 0x00002000,\quad PointerToRawData = 0x00000A00}
+\end{center}
+
+因此，\texttt{.rdata} 节在内存中的 RVA 范围为：
+
+\begin{center}
+\texttt{0x2000 < RVA < 0x2000 + 0x02F6 = 0x22F6}
+\end{center}
+
+由于：
+
+\begin{center}
+\texttt{0x2000 < 0x20C4 < 0x22F6}
+\end{center}
+
+所以可以判断 \texttt{IMPORT Table} 位于 \texttt{.rdata} 节中。根据 RVA 到文件偏移的换算公式：
+
+\begin{center}
+\texttt{文件偏移 = RVA - 节 RVA + PointerToRawData}
+\end{center}
+
+可得导入表的文件偏移为：
+
+\begin{center}
+\texttt{0x20C4 - 0x2000 + 0x0A00 = 0x0AC4}
+\end{center}
+
+因此，\texttt{IMPORT Directory Table} 的文件偏移为 \texttt{0x0AC4}。
+
+\subsubsection{观察导入描述符结构}
+
+在 PEView 中展开 \texttt{SECTION .rdata}，打开 \texttt{IMPORT Directory Table}，观察每个导入描述符。每个 \texttt{IMAGE\_IMPORT\_DESCRIPTOR} 对应一个被导入的 DLL，其中 \texttt{Import Name Table RVA} 指向 INT，\texttt{Name RVA} 指向 DLL 名字符串，\texttt{Import Address Table RVA} 指向 IAT。
+
+\imgsingle[0.86\textwidth]{img/9.png}{查看 \texttt{IMPORT Directory Table} 中的导入描述符}{fig:exp42-import-descriptor}
+
+如图~\ref{fig:exp42-import-descriptor} 所示，当前程序导入了 \texttt{user32.dll}、\texttt{kernel32.dll} 和 \texttt{gdi32.dll}。其中，\texttt{user32.dll} 对应的导入描述符字段为：
+
+\begin{center}
+\texttt{Import Name Table RVA = 0x00002128}
+\end{center}
+
+\begin{center}
+\texttt{Name RVA = 0x000022A0}
+\end{center}
+
+\begin{center}
+\texttt{Import Address Table RVA = 0x00002014}
+\end{center}
+
+\texttt{kernel32.dll} 对应的导入描述符字段为：
+
+\begin{center}
+\texttt{Import Name Table RVA = 0x0000211C}
+\end{center}
+
+\begin{center}
+\texttt{Name RVA = 0x000022CE}
+\end{center}
+
+\begin{center}
+\texttt{Import Address Table RVA = 0x00002008}
+\end{center}
+
+\texttt{gdi32.dll} 对应的导入描述符字段为：
+
+\begin{center}
+\texttt{Import Name Table RVA = 0x00002114}
+\end{center}
+
+\begin{center}
+\texttt{Name RVA = 0x000022EC}
+\end{center}
+
+\begin{center}
+\texttt{Import Address Table RVA = 0x00002000}
+\end{center}
+
+导入描述符表后方出现连续的 \texttt{0x00000000}，表示导入描述符数组结束。
+
+\subsubsection{观察加载前的 INT 与 IAT}
+
+接下来分别查看 \texttt{IMPORT Name Table} 和 \texttt{IMPORT Address Table}。在程序加载前，二者中的表项都保存 \texttt{Hint/Name RVA}，即指向 \texttt{IMAGE\_IMPORT\_BY\_NAME} 结构的 RVA，而不是 API 函数的真实入口地址。
+
+\imgtwo[0.48\textwidth]
+{img/10.png}{加载前 \texttt{IMPORT Name Table} 中的 \texttt{Hint/Name RVA}}{fig:exp42-int-before}
+{img/11.png}{加载前 \texttt{IMPORT Address Table} 中的 \texttt{Hint/Name RVA}}{fig:exp42-iat-before}
+{加载前 INT 与 IAT 表项内容对比}
+{fig:exp42-int-iat-before}
+
+如图~\ref{fig:exp42-int-iat-before} 所示，加载前 \texttt{IMPORT Name Table} 与 \texttt{IMPORT Address Table} 中的内容基本一致。以 \texttt{user32.dll} 中的 \texttt{GetDlgItemTextA} 为例：
+
+\begin{center}
+\texttt{IMPORT Name Table: Data = 0x000021C2,\quad Value = GetDlgItemTextA}
+\end{center}
+
+\begin{center}
+\texttt{IMPORT Address Table: Data = 0x000021C2,\quad Value = GetDlgItemTextA}
+\end{center}
+
+这说明加载前 IAT 并没有保存 \texttt{GetDlgItemTextA} 的真实函数地址，而是保存了一个指向函数名结构的 RVA，即 \texttt{0x21C2}。
+
+\subsubsection{验证 Hint/Name RVA 指向函数名结构}
+
+为进一步确认 \texttt{0x21C2} 的含义，将其换算为文件偏移。由于该 RVA 位于 \texttt{.rdata} 节中，因此：
+
+\begin{center}
+\texttt{0x21C2 - 0x2000 + 0x0A00 = 0x0BC2}
+\end{center}
+
+使用 ImHex 打开 \texttt{Control.exe}，跳转到文件偏移 \texttt{0x0BC2}，观察对应内容。
+
+\imgsingle[0.86\textwidth]{img/12.png}{在 ImHex 中验证 \texttt{0x21C2} 指向 \texttt{GetDlgItemTextA} 的 Hint/Name 结构}{fig:exp42-hint-name}
+
+如图~\ref{fig:exp42-hint-name} 所示，在文件偏移 \texttt{0x0BC2} 处可以看到：
+
+\begin{center}
+\texttt{FC 00 47 65 74 44 6C 67 49 74 65 6D 54 65 78 74 41 00}
+\end{center}
+
+其中，前两个字节 \texttt{FC 00} 是 Hint 值，按小端序表示：
+
+\begin{center}
+\texttt{Hint = 0x00FC}
+\end{center}
+
+后面的 ASCII 字符串为：
+
+\begin{center}
+\texttt{GetDlgItemTextA\textbackslash 0}
+\end{center}
+
+这说明加载前 IAT 表项 \texttt{0x21C2} 确实指向 \texttt{IMAGE\_IMPORT\_BY\_NAME} 结构，即“Hint + 函数名字符串”，而不是函数真实入口地址。
+
+\subsubsection{观察加载后的 IAT 内容}
+
+随后使用 x32dbg 打开 \texttt{Control.exe}。程序加载后，首先根据入口点地址计算实际加载基址。x32dbg 中显示入口点地址为 \texttt{0x00BD1404}，而原入口点 RVA 为 \texttt{0x1404}，因此实际加载基址为：
+
+\begin{center}
+\texttt{0x00BD1404 - 0x1404 = 0x00BD0000}
+\end{center}
+
+前面已经确定 \texttt{user32.dll} 对应的 IAT RVA 为 \texttt{0x2014}，因此加载后 IAT 的内存地址为：
+
+\begin{center}
+\texttt{0x00BD0000 + 0x2014 = 0x00BD2014}
+\end{center}
+
+在 x32dbg 中跳转到 \texttt{0x00BD2014}，观察加载后的 IAT 表项。
+
+\imgtwo[0.48\textwidth]
+{img/13.png}{x32dbg 在 CPU 窗口跳转到加载后 IAT 地址}{fig:exp42-iat-cpu}
+{img/14.png}{x32dbg 内存窗口查看加载后 IAT 内容}{fig:exp42-iat-memory}
+{加载后 IAT 表项被系统加载器改写为真实 API 地址}
+{fig:exp42-iat-after}
+
+如图~\ref{fig:exp42-iat-after} 所示，加载后的 \texttt{0x00BD2014} 处已经不再保存加载前文件中的 \texttt{0x21C2}。在 CPU 窗口中，x32dbg 对该位置进行符号解析，右侧显示为 \texttt{GetDlgItemTextA}；在内存窗口中，该地址附近显示为多个 4 字节一组的内存地址。这说明程序加载后，系统加载器已经根据导入表和 DLL 导出表，将 IAT 中原本的 \texttt{Hint/Name RVA} 改写为实际的 API 函数入口地址。
+
+需要注意的是，图~\ref{fig:exp42-iat-cpu} 中 CPU 窗口会将 IAT 表项中的数据误按指令形式反汇编，因此出现 \texttt{push}、\texttt{movsb}、\texttt{ja} 等指令显示。这并不表示该位置是正常代码，而是因为 IAT 本质上是数据表。真正需要关注的是该地址所在位置和符号解析结果，即 \texttt{0x00BD2014} 对应 \texttt{GetDlgItemTextA}。
+
+\FloatBarrier
+
+\subsection{EPO 之指令 Patch}
+
+\subsubsection{实验目标与修改思路}
+
+本实验以 \texttt{Control.exe} 为对象，完成 EPO 方式的指令 Patch。与直接修改程序入口点不同，EPO 方法不改变 \texttt{AddressOfEntryPoint}，而是在原程序正常执行路径中选择一条已有指令，将其改为跳转或调用寄生代码。寄生代码执行结束后再跳回原有执行流程，从而保持程序整体运行逻辑不被破坏。
+
+本实验选择在 \texttt{.text} 节末尾空洞写入寄生代码，然后将入口点附近原本调用 \texttt{GetModuleHandleA} 的相对 \texttt{CALL} 指令修改为调用寄生代码。寄生代码执行后，再跳回原来的 \texttt{GetModuleHandleA} 导入跳板位置，使程序继续执行原逻辑。
+
+\subsubsection{定位 \texttt{.text} 节空洞}
+
+首先使用 PEView 打开 \texttt{Control.exe}，查看 \texttt{IMAGE\_SECTION\_HEADER .text}，记录 \texttt{.text} 节的关键字段。
+
+\imgsingle[0.86\textwidth]{img/15.png}{查看 \texttt{.text} 节原始字段}{fig:exp43-text-section}
+
+如图~\ref{fig:exp43-text-section} 所示，\texttt{.text} 节的原始字段为：
+
+\begin{center}
+\texttt{VirtualSize = 0x053C,\quad RVA = 0x1000,\quad SizeOfRawData = 0x0600,\quad PointerToRawData = 0x0400}
+\end{center}
+
+因此，\texttt{.text} 节中已使用区域的末尾文件偏移为：
+
+\begin{center}
+\texttt{0x0400 + 0x053C = 0x093C}
+\end{center}
+
+对应的 RVA 为：
+
+\begin{center}
+\texttt{0x1000 + 0x053C = 0x153C}
+\end{center}
+
+同时，\texttt{.text} 节剩余空洞大小为：
+
+\begin{center}
+\texttt{0x0600 - 0x053C = 0x00C4}
+\end{center}
+
+本实验写入的寄生代码长度为 \texttt{0x16} 字节，小于剩余空洞大小 \texttt{0x00C4}，因此可以将寄生代码写入 \texttt{0x093C} 处。
+
+\subsubsection{写入寄生代码}
+
+使用 ImHex 跳转到文件偏移 \texttt{0x093C}，写入寄生代码。寄生代码的主要作用是通过 \texttt{call-pop} 结构取得自身附近地址，将学号后 8 位 \texttt{80904007} 写入原先预留的 4 个 \texttt{NOP} 位置，然后跳回原程序执行流程。
+
+\imgsingle[0.86\textwidth]{img/16.png}{在 \texttt{0x093C} 处写入寄生代码}{fig:exp43-parasite-code}
+
+如图~\ref{fig:exp43-parasite-code} 所示，写入的寄生代码为：
+
+\begin{center}
+\texttt{E8 04 00 00 00 90 90 90 90 58 BB 07 40 90 80 89 18 E9 00 00 00 00}
+\end{center}
+
+其中，\texttt{BB 07 40 90 80} 对应指令：
+
+\begin{center}
+\texttt{mov ebx, 0x80904007}
+\end{center}
+
+由于 x86 中立即数按小端序存储，因此学号后 8 位 \texttt{80904007} 在文件中写作：
+
+\begin{center}
+\texttt{07 40 90 80}
+\end{center}
+
+寄生代码最后的 \texttt{E9 00 00 00 00} 暂时作为占位，后续再根据需要跳回的位置重新计算相对偏移。
+
+\subsubsection{修改 \texttt{.text} 节表字段}
+
+写入寄生代码后，需要修改 \texttt{.text} 节的 \texttt{VirtualSize}，使新增代码能够被加载到内存中。原始 \texttt{VirtualSize} 为 \texttt{0x053C}，新增寄生代码长度为 \texttt{0x16}，因此新的 \texttt{VirtualSize} 为：
+
+\begin{center}
+\texttt{0x053C + 0x16 = 0x0552}
+\end{center}
+
+同时，寄生代码中存在写入自身附近内存的操作，因此需要为 \texttt{.text} 节增加可写权限。原始节属性为：
+
+\begin{center}
+\texttt{Characteristics = 0x60000020}
+\end{center}
+
+加入 \texttt{IMAGE\_SCN\_MEM\_WRITE = 0x80000000} 后得到：
+
+\begin{center}
+\texttt{0x60000020 | 0x80000000 = 0xE0000020}
+\end{center}
+
+\imgsingle[0.86\textwidth]{img/17.png}{修改 \texttt{.text} 节的 \texttt{VirtualSize} 和 \texttt{Characteristics}}{fig:exp43-section-modify}
+
+如图~\ref{fig:exp43-section-modify} 所示，文件偏移 \texttt{0x1D0} 处的 \texttt{VirtualSize} 被修改为：
+
+\begin{center}
+\texttt{52 05 00 00}
+\end{center}
+
+即：
+
+\begin{center}
+\texttt{0x00000552}
+\end{center}
+
+文件偏移 \texttt{0x1EC} 处的 \texttt{Characteristics} 被修改为：
+
+\begin{center}
+\texttt{20 00 00 E0}
+\end{center}
+
+即：
+
+\begin{center}
+\texttt{0xE0000020}
+\end{center}
+
+\subsubsection{Patch 入口附近的 \texttt{CALL} 指令}
+
+原计划可以搜索导入跳板形式的 \texttt{FF 25} 指令，但这类指令中包含绝对地址，加载时可能受到重定位表影响。因此本实验最终选择入口点附近一条相对 \texttt{CALL} 指令作为 Patch 点。相对 \texttt{CALL} 使用相对偏移，不依赖固定绝对地址，修改后更稳定。
+
+入口点附近原始指令位于文件偏移 \texttt{0x0806}，其原始机器码为：
+
+\begin{center}
+\texttt{E8 25 01 00 00}
+\end{center}
+
+该指令对应调用 \texttt{GetModuleHandleA} 的导入跳板。该位置的 RVA 为：
+
+\begin{center}
+\texttt{0x0806 - 0x0400 + 0x1000 = 0x1406}
+\end{center}
+
+寄生代码 RVA 已确定为 \texttt{0x153C}，因此相对 \texttt{CALL} 的偏移计算如下：
+
+\begin{center}
+\texttt{0x153C - (0x1406 + 5) = 0x0131}
+\end{center}
+
+所以将原始机器码修改为：
+
+\begin{center}
+\texttt{E8 31 01 00 00}
+\end{center}
+
+\imgsingle[0.86\textwidth]{img/19.png}{将入口附近原有 \texttt{CALL} 指令 Patch 为调用寄生代码}{fig:exp43-call-patch}
+
+如图~\ref{fig:exp43-call-patch} 所示，文件偏移 \texttt{0x0806} 处已经修改为 \texttt{E8 31 01 00 00}，表示程序执行到该处时会调用 RVA \texttt{0x153C} 处的寄生代码。
+
+\subsubsection{修改寄生代码尾部跳转}
+
+寄生代码执行结束后，需要跳回原来的 \texttt{GetModuleHandleA} 导入跳板，使程序能够继续执行原流程。根据调试结果，原 \texttt{GetModuleHandleA} 导入跳板对应 RVA 为 \texttt{0x1530}。
+
+寄生代码尾部 \texttt{JMP} 指令位于文件偏移 \texttt{0x094D}，其 RVA 为：
+
+\begin{center}
+\texttt{0x094D - 0x0400 + 0x1000 = 0x154D}
+\end{center}
+
+\texttt{E9} 指令长度为 5 字节，因此下一条指令 RVA 为：
+
+\begin{center}
+\texttt{0x154D + 5 = 0x1552}
+\end{center}
+
+跳回目标 RVA 为 \texttt{0x1530}，所以相对偏移为：
+
+\begin{center}
+\texttt{0x1530 - 0x1552 = -0x22}
+\end{center}
+
+将 \texttt{-0x22} 转换为 32 位补码并按小端序写入，得到：
+
+\begin{center}
+\texttt{DE FF FF FF}
+\end{center}
+
+因此寄生代码尾部由：
+
+\begin{center}
+\texttt{E9 00 00 00 00}
+\end{center}
+
+修改为：
+
+\begin{center}
+\texttt{E9 DE FF FF FF}
+\end{center}
+
+\imgsingle[0.86\textwidth]{img/20.png}{修改寄生代码尾部 \texttt{JMP}，使其跳回原导入跳板}{fig:exp43-tail-jmp}
+
+如图~\ref{fig:exp43-tail-jmp} 所示，文件偏移 \texttt{0x094D} 处已经修改为 \texttt{E9 DE FF FF FF}，表示寄生代码执行完毕后跳回原来的 \texttt{GetModuleHandleA} 调用链。
+
+\subsubsection{动态调试验证}
+
+修改完成后，使用 x32dbg 打开修改后的 \texttt{Control.exe}。程序入口点地址显示为 \texttt{0x00CC1404}，对应原入口点 RVA \texttt{0x1404}，因此本次加载基址为：
+
+\begin{center}
+\texttt{0x00CC1404 - 0x1404 = 0x00CC0000}
+\end{center}
+
+入口附近被 Patch 的指令 RVA 为 \texttt{0x1406}，因此其实际内存地址为：
+
+\begin{center}
+\texttt{0x00CC0000 + 0x1406 = 0x00CC1406}
+\end{center}
+
+寄生代码 RVA 为 \texttt{0x153C}，因此其实际内存地址为：
+
+\begin{center}
+\texttt{0x00CC0000 + 0x153C = 0x00CC153C}
+\end{center}
+
+\imgtwo[0.48\textwidth]
+{img/21.png}{入口附近 \texttt{CALL} 已跳转到寄生代码}{fig:exp43-debug-entry}
+{img/22.png}{寄生代码执行后跳回 \texttt{GetModuleHandleA} 导入跳板}{fig:exp43-debug-parasite}
+{x32dbg 中验证 EPO Patch 后的执行链}
+{fig:exp43-debug-chain}
+
+如图~\ref{fig:exp43-debug-chain} 所示，入口附近地址 \texttt{0x00CC1406} 处的指令已经变为：
+
+\begin{center}
+\texttt{call control.CC153C}
+\end{center}
+
+说明原程序执行到该位置时，会先进入寄生代码。跳转到 \texttt{0x00CC153C} 后，可以看到寄生代码的完整指令序列：
+
+\begin{center}
+\texttt{call control.CC1545}
+\end{center}
+
+\begin{center}
+\texttt{nop nop nop nop}
+\end{center}
+
+\begin{center}
+\texttt{pop eax}
+\end{center}
+
+\begin{center}
+\texttt{mov ebx, 80904007}
+\end{center}
+
+\begin{center}
+\texttt{mov dword ptr ds:[eax], ebx}
+\end{center}
+
+\begin{center}
+\texttt{jmp <JMP.\&GetModuleHandleA>}
+\end{center}
+
+这说明程序执行流已经由原入口附近的 \texttt{CALL} 指令进入寄生代码，寄生代码写入学号后 8 位 \texttt{80904007} 后，又通过尾部 \texttt{JMP} 跳回原来的 \texttt{GetModuleHandleA} 导入跳板。由此验证，本实验在不修改 \texttt{AddressOfEntryPoint} 的情况下，完成了基于 EPO 的指令 Patch，并保持了原程序执行流程的连续性。
+
+\FloatBarrier
+
+\noindent {\color{red}\heiti\zihao{3} 六、实验结论：}
+
+本次实验完成了对 DLL 导出表、DLL 导入表和 EPO 指令 Patch 三个部分的分析与验证。在导出表实验中，通过 \texttt{user32.dll} 的 \texttt{EXPORT Table} 成功定位到 \texttt{IMAGE\_EXPORT\_DIRECTORY}，并根据函数名指针表、序号表和函数地址表，查找到学号后两位 \texttt{07} 对应的导出函数 \texttt{AnimateWindow}。实验结果表明，\texttt{AnimateWindow} 的函数地址表索引为 \texttt{0x0006}，导出序号为 \texttt{7}，函数入口 RVA 为 \texttt{0x00012156}，对应文件偏移为 \texttt{0x11556}。在 ImHex 中观察到该位置的机器码 \texttt{8B FF 55 8B EC}，验证了导出函数地址查找过程正确。
+
+在导入表实验中，通过 \texttt{Control.exe} 的数据目录定位到 \texttt{IMPORT Table RVA = 0x20C4}，并根据 \texttt{.rdata} 节表字段计算出导入表文件偏移为 \texttt{0x0AC4}。通过观察 \texttt{IMPORT Directory Table}，确认程序导入了 \texttt{user32.dll}、\texttt{kernel32.dll} 和 \texttt{gdi32.dll}。进一步对比 \texttt{IMPORT Name Table} 和 \texttt{IMPORT Address Table} 可知，程序加载前 IAT 表项保存的是 \texttt{Hint/Name RVA}，例如 \texttt{GetDlgItemTextA} 对应的表项为 \texttt{0x21C2}；通过 ImHex 跳转到 \texttt{0x0BC2} 后，可以看到 \texttt{Hint = 0x00FC} 和函数名字符串 \texttt{GetDlgItemTextA}。在 x32dbg 中观察加载后的 IAT，可以确认系统加载器已经将 IAT 表项改写为真实 API 函数地址，验证了 PE 导入表的动态解析机制。
+
+在 EPO 指令 Patch 实验中，首先根据 \texttt{Control.exe} 的 \texttt{.text} 节表字段计算出节末尾空洞文件偏移为 \texttt{0x093C}，对应 RVA 为 \texttt{0x153C}，并成功写入长度为 \texttt{0x16} 字节的寄生代码。随后将 \texttt{.text} 节的 \texttt{VirtualSize} 从 \texttt{0x053C} 修改为 \texttt{0x0552}，将 \texttt{Characteristics} 从 \texttt{0x60000020} 修改为 \texttt{0xE0000020}，保证新增代码能够被加载并具有写权限。最后将入口附近文件偏移 \texttt{0x0806} 处的 \texttt{CALL} 指令由 \texttt{E8 25 01 00 00} 修改为 \texttt{E8 31 01 00 00}，使程序执行流进入寄生代码；再将寄生代码尾部 \texttt{JMP} 修改为 \texttt{E9 DE FF FF FF}，使其跳回原 \texttt{GetModuleHandleA} 导入跳板。x32dbg 调试结果表明，程序执行流能够按照“入口附近 CALL \(\rightarrow\) 寄生代码 \(\rightarrow\) 原导入跳板”的顺序运行，说明 EPO 指令 Patch 实验成功完成。
+
+综合三个实验可以得出结论：PE 文件中的导出表、导入表和指令执行流之间存在明确的结构关系。导出表解决 DLL 内部“函数名到函数地址”的映射问题，导入表解决 EXE 加载时“外部函数引用到真实 API 地址”的解析问题，而 EPO 指令 Patch 则是在理解 PE 节结构、RVA 换算、指令编码和加载机制基础上，对程序执行流进行受控修改。通过本次实验，可以较完整地理解 PE 文件从静态结构到动态执行之间的联系。
+
+\vspace{1.2cm}
+
+\noindent {\color{red}\heiti\zihao{3} 七、总结及心得体会：}
+
+本次实验相比前面的文件结构分析实验，更强调“表结构、文件字节和运行时行为”之间的对应关系。仅在 PEView 中看到表项还不够，还需要使用 ImHex 回到文件原始字节中验证字段是否真实存在，再使用 x32dbg 在程序运行后观察这些字段如何被系统加载器解释和改写。通过这种静态与动态结合的方式，能够更清楚地理解 PE 文件不是孤立的十六进制数据，而是一套会被系统加载器按规则解析并执行的结构化文件。
+
+在 DLL 导出表实验中，我对函数名、序号和函数地址之间的关系有了更直观的认识。导出函数的查找并不是简单搜索字符串，而是需要经过函数名指针表、序号表和函数地址表的多级映射。通过 \texttt{AnimateWindow} 的查找过程可以看到，函数名字符串、导出序号和函数入口 RVA 分别存放在不同表中，只有把这些表联系起来，才能准确定位函数入口。
+
+在 DLL 导入表实验中，我进一步理解了 IAT 的作用。程序文件在磁盘上无法提前知道系统 DLL 被加载到哪个地址，因此加载前的 IAT 只能保存指向函数名结构的 RVA；程序运行时，加载器再根据 DLL 导出表解析真实函数地址并写回 IAT。这个过程解释了为什么同一个 IAT 表项在文件中和内存中会呈现不同内容，也说明分析 PE 文件时不能只看静态文件，还必须考虑加载后的内存状态。
+
+在 EPO 指令 Patch 实验中，最关键的体会是补丁修改必须服从指令编码和加载机制。最开始尝试修改导入跳板形式的 \texttt{FF 25} 指令时，由于该位置涉及绝对地址和重定位，调试时会出现与文件中原始字节不一致的情况。后来改为 Patch 入口附近的相对 \texttt{CALL} 指令，问题才得到解决。这说明在进行执行流修改时，不能只看某条指令表面上能不能跳转，还要判断它是否会受重定位、加载基址和指令长度影响。
+
+通过本次实验，我对 PE 文件分析的基本思路更加清晰：先用结构化工具确定字段含义，再用十六进制编辑器验证和修改原始字节，最后用调试器验证运行时效果。这个过程也说明，PE 文件分析的重点不是单纯记忆某个字段名称，而是能够把字段值、地址换算、指令编码和程序行为连接起来，形成完整的证据链。
+
+\vspace{1.2cm}
+
+\begin{flushright}
+{\heiti\zihao{3} 报告评分：}\qquad\qquad\qquad\qquad
+
+\vspace{1.2cm}
+
+{\heiti\zihao{3} 指导教师签字：}\qquad\qquad\qquad
+
+\end{flushright}
+
+\end{document}
